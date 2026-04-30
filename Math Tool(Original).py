@@ -1,53 +1,55 @@
-import math
+if __name__ == "__main__":
 
+ import math
 while True:
+    unit = input("Enter the unit of measurement (cm, m, in, ft, or a custom unit):")
     Shape_type = str(input("Shape type (3D or 2D): ")).strip().upper()
 
     if Shape_type == "2D":
-        Shape_2D = str(input("Shape (Triangle, Circle, Rectangle, Square, Parallelogram, Hexagon or Exit): ")).strip().capitalize()
+        Shape_2D = str(input("Shape (Triangle, Circle, Rectangle, Square, Parallelogram, Hexagon, a custom polygon or Exit): ")).strip().capitalize()
 
         if Shape_2D == "Triangle":
-            Base = float(input("Base: "))
-            Height = float(input("Height: "))
+            Base = float(input(f"Base({unit}): "))
+            Height = float(input(f"Height({unit}): "))
             Hypotenuse = math.sqrt(Base ** 2 + Height ** 2)
-            print(f"> Hypotenuse: {Hypotenuse:.2f}")
+            print(f"> Hypotenuse: {Hypotenuse:.2f} {unit}")
             angle_rad = math.acos(Base / Hypotenuse)
             angle_deg = math.degrees(angle_rad)
             print(f"> Base angle: {angle_deg:.2f} degrees")
             print(f"> Acute angle: {90 - angle_deg:.2f} degrees")
 
         elif Shape_2D == "Circle":
-            Radius = float(input("Radius: "))
+            Radius = float(input(f"Radius({unit}): "))
             area = math.pi * (Radius ** 2)
             circumference = 2 * math.pi * Radius
-            print(f"> Circumference: {circumference:.2f}")
-            print(f"> Area: {area:.2f}")
+            print(f"> Circumference: {circumference:.2f} {unit}")
+            print(f"> Area: {area:.2f} {unit}²")
 
         elif Shape_2D == "Rectangle":
-            Length = float(input("Length: "))
-            Width = float(input("Width: "))
+            Length = float(input(f"Length ({unit}): "))
+            Width = float(input(f"Width ({unit}): "))
             area = Length * Width
             perimeter = 2 * (Length + Width)
-            print(f"> Perimeter: {perimeter:.2f}")
-            print(f"> Area: {area:.2f}")
+            print(f"> Perimeter: {perimeter:.2f} {unit}")
+            print(f"> Area: {area:.2f} {unit}²")
 
         elif Shape_2D == "Square":
-            Side = float(input("Side: "))
-            print(f"> Perimeter: {4 * Side:.2f}")
-            print(f"> Area: {Side ** 2:.2f}")
+            Side = float(input(f"Side ({unit}): "))
+            print(f"> Perimeter: {4 * Side:.2f} {unit}")
+            print(f"> Area: {Side ** 2:.2f} {unit}²")
 
         elif Shape_2D == "Parallelogram":
-            Base = float(input("Base: "))
-            Height = float(input("Height: "))
-            Side_B = float(input("Side length (the slanted side): "))
-            print(f"> Area: {Base * Height:.2f}")
-            print(f"> Perimeter: {2 * (Base + Side_B):.2f}")
+            Base = float(input(f"Base({unit}): "))
+            Height = float(input(f"Height ({unit}): "))
+            Side_B = float(input(f"Side length (the slanted side)({unit}): "))
+            print(f"> Area: {Base * Height:.2f} {unit}²")
+            print(f"> Perimeter: {2 * (Base + Side_B):.2f} {unit}")
 
         elif Shape_2D == "Hexagon":
-            Side = float(input("Side length: "))
+            Side = float(input(f"Side length ({unit}): "))
             area = (3 * math.sqrt(3) / 2) * (Side ** 2)
-            print(f"> Area: {area:.2f}")
-            print(f"> Perimeter: {6 * Side:.2f}")
+            print(f"> Area: {area:.2f} {unit}²")
+            print(f"> Perimeter: {6 * Side:.2f} {unit}")
 
         elif Shape_2D == "Exit":
             print("Goodbye")
@@ -66,8 +68,8 @@ while True:
                 interior_angle = ((num_sides - 2) * 180) / num_sides
                 area = (num_sides * side_length ** 2) / (4 * math.tan(math.pi / num_sides))
                 print(f"> Each interior angle: {interior_angle:.2f} degrees")
-                print(f"> Total Area: {area:.2f}")
-                print(f"> Perimeter: {num_sides * side_length:.2f}")
+                print(f"> Total Area: {area:.2f}²")
+                print(f"> Perimeter: {num_sides * side_length:.2f} {unit}")
             except ValueError:
                 print("> Please enter valid numbers for sides and length.")
 
@@ -75,40 +77,40 @@ while True:
         Shape_3D = str(input("Shape (Cube, Cuboid, Sphere, Cylinder, Pyramid, Cone or Exit): ")).strip().capitalize()
         try:
             if Shape_3D == "Cube":
-                Length = float(input("Length of any edge: "))
+                Length = float(input(f"Length of any edge ({unit}): "))
                 Volume = Length ** 3
-                print(f"> Volume: {Volume:.2f}")
+                print(f"> Volume: {Volume:.2f} {unit}³")
 
             elif Shape_3D == "Cuboid":
-                Length = float(input("Length of Cuboid: "))
-                Width = float(input("Width of Cuboid: "))
-                Height = float(input("Height of Cuboid: "))
+                Length = float(input(f"Length of Cuboid ({unit}): "))
+                Width = float(input(f"Width of Cuboid ({unit}): "))
+                Height = float(input(f"Height of Cuboid ({unit}): "))
                 Volume = Length * Width * Height
-                print(f"> Volume: {Volume:.2f}")
+                print(f"> Volume: {Volume:.2f} {unit}³ ")
 
             elif Shape_3D == "Sphere":
-                Radius = float(input("Radius: "))
+                Radius = float(input(f"Radius ({unit}): "))
                 Volume = 4 / 3 * math.pi * (Radius ** 3)
-                print(f"> Volume: {Volume:.2f}")
+                print(f"> Volume: {Volume:.2f} {unit}³")
 
             elif Shape_3D == "Cylinder":
-                Radius = float(input("Radius of the base or top: "))
-                Height = float(input("Height of Cylinder: "))
+                Radius = float(input(f"Radius of the base or top ({unit}): "))
+                Height = float(input(f"Height of Cylinder ({unit}): "))
                 Volume = math.pi * (Radius ** 2) * Height
-                print(f"> Volume: {Volume:.2f}")
+                print(f"> Volume: {Volume:.2f} {unit}³")
 
             elif Shape_3D == "Pyramid":
-                Length = float(input("Length of Base: "))
-                Width = float(input("Width of Base: "))
-                Height = float(input("Vertical height: "))
+                Length = float(input(f"Length of Base ({unit}): "))
+                Width = float(input(f"Width of Base ({unit}): "))
+                Height = float(input(f"Vertical height ({unit}): "))
                 Volume = Length * Width * Height / 3
-                print(f"> Volume: {Volume:.2f}")
+                print(f"> Volume: {Volume:.2f} {unit}³")
 
             elif Shape_3D == "Cone":
-                Radius = float(input("Radius of the base: "))
-                Height = float(input("Vertical height: "))
+                Radius = float(input(f"Radius of the base ({unit}): "))
+                Height = float(input(f"Vertical height ({unit}): "))
                 Volume = (1/3) * math.pi * (Radius ** 2) * Height
-                print(f"> Volume: {Volume:.2f}")
+                print(f"> Volume: {Volume:.2f} {unit}³")
 
 
             elif Shape_3D == "Exit":
