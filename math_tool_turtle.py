@@ -1,6 +1,5 @@
 import turtle
 import math
-if __name__ == "__main__":
 # --- CONFIGURATION & THEME ---
 THEME = {
     "bg": "#0B0E14", "sidebar": "#161B22", "grid": "#1E2530",
