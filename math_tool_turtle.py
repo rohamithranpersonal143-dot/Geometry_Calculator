@@ -1,551 +1,481 @@
 import turtle
 import math
-if __name__ == "__main__":
-    THEME = {
-        "bg": "#0B0E14", "sidebar": "#161B22", "grid": "#1E2530",
-        "btn_idle": "#21262D", "btn_active": "#58A6FF", "text": "#E0FFFF",
-        "accent": "#4A6670", "label": "#F0E68C"
-    }
+import datetime
 
-    app_state = {
-        "category": "2D",
-        "shape": "Rectangle",
-        "unit": "cm",
-        "val1": 15.0,
-        "val2": 8.0,
-        "sides": 5,
-        "color": "#2ECC71"
-    }
+# --- INITIALIZATION & THEME ---
+THEME = {
+    "bg": "#0B0E14", "sidebar": "#161B22", "grid": "#1E2530",
+    "btn_idle": "#21262D", "btn_active": "#58A6FF", "text": "#E0FFFF",
+    "accent": "#4A6670", "label": "#F0E68C"
+}
+screen = turtle.Screen()
 
-    # --- INITIALIZATION ---
-    screen = turtle.Screen()
-    screen.setup(width=1.0, height=1.0)
-    screen.title("Designer Pro CAD")
-    screen.bgcolor(THEME["bg"])
-    screen.tracer(0)
+# --- THE "KILL THE WHITE BARS" PATCH ---
+# 1. Removes the window border and title bar
+root = screen._root
+root.overrideredirect(True)
 
-    # Layered Turtles for performance
-    grid_t, draw_t, ui_t = turtle.Turtle(), turtle.Turtle(), turtle.Turtle()
-    for t in [grid_t, draw_t, ui_t]:
-        t.hideturtle()
-        t.penup()
+# 2. Forces the window to cover the entire screen (including taskbar)
+screen.setup(width=1.0, height=1.0)
 
+# 3. Ensures the window is centered and focused
+root.focus_force()
+# ---------------------------------------
 
-    def draw_grid():
-        grid_t.clear()
-        grid_t.color(THEME["grid"])
-        for x in range(-350, 1000, 50):
-            grid_t.goto(x, -600)
-            grid_t.pendown()
-            grid_t.goto(x, 600)
-            grid_t.penup()
-        for y in range(-600, 600, 50):
-            grid_t.goto(-350, y)
-            grid_t.pendown()
-            grid_t.goto(1000, y)
-            grid_t.penup()
+screen.title("Designer Pro CAD")
+screen.bgcolor(THEME["bg"])
+screen.tracer(0)
+
+app_state = {
+    "category": "2D", "shape": "Rectangle", "unit": "cm",
+    "val1": 15.0, "val2": 8.0, "sides": 5, "depth": 10.0,
+    "color": "#2ECC71"
+}
+
+screen = turtle.Screen()
+screen.setup(width=1.0, height=1.0)
+screen.title("Designer Pro CAD")
+screen.bgcolor(THEME["bg"])
+screen.tracer(0)
+
+grid_t, draw_t, ui_t = turtle.Turtle(), turtle.Turtle(), turtle.Turtle()
+for t in [grid_t, draw_t, ui_t]:
+    t.hideturtle()
+    t.penup()
 
 
-    def draw_specs(cx, cy, VIS):
-        draw_t.color(THEME["label"])
-        draw_t.goto(cx - VIS / 2, cy + VIS / 2 + 20)
-        s = app_state["shape"]
-        u = app_state["unit"]
-        v1, v2 = app_state["val1"], app_state["val2"]
+def draw_grid():
+    # Force recalculation of screen size to prevent black screen
+    W, H = screen.window_width(), screen.window_height()
+    grid_t.clear()
+    grid_t.color(THEME["grid"])
+    grid_t.pensize(1)
 
-        if s == "Parallelogram":
-            # Calculate the actual length of the tilted side
-            slant_dist = VIS * 0.4  # This matches the slant in the drawing engine
-            # Map the visual slant back to the real-world scale
-            real_slant_offset = (slant_dist / VIS) * v1
-            actual_slant = math.sqrt(v2 ** 2 + real_slant_offset ** 2)
-            txt = f"Base: {v1}{u} | Height: {v2}{u} | Slant: {actual_slant:.1f}{u}"
-        elif s in ["Circle", "Sphere"]:
-            txt = f"Radius: {v1}{u}"
-        elif s in ["Square", "Cube"]:
-            txt = f"Side: {v1}{u}"
-        elif s == "Polygon":
-            txt = f"Side: {v1}{u} | Sides: {app_state['sides']}"
-        else:
-            txt = f"Base: {v1}{u} | Height: {v2}{u}"
+    # Draw vertical lines
+    for x in range(int(-W / 2), int(W / 2), 50):
+        grid_t.penup()
+        grid_t.goto(x, -H / 2)
+        grid_t.pendown()
+        grid_t.goto(x, H / 2)
+    # Draw horizontal lines
+    for y in range(int(-H / 2), int(H / 2), 50):
+        grid_t.penup()
+        grid_t.goto(-W / 2, y)
+        grid_t.pendown()
+        grid_t.goto(W / 2, y)
 
-        draw_t.write(txt, font=("Courier", 14, "italic"))
+def draw_specs(cx, cy, VIS):
+    draw_t.color(THEME["label"])
+    u = app_state["unit"]
+    v1, v2 = app_state["val1"], app_state["val2"]
+    s = app_state["shape"]
+
+    # Moved higher to avoid overlap
+    draw_t.goto(cx, cy + VIS / 2 + 130)
+    if s == "Cylinder":
+        txt = f"Radius: {v1}{u} | Width: {v1 * 2}{u} | Height: {v2}{u}"
+    elif s == "Cuboid":
+        txt = f"W: {v1}{u} | H: {v2}{u} | D: {app_state['depth']}{u}"
+    elif s == "Polygon":
+        txt = f"Side: {v1}{u} | Sides: {app_state['sides']}"
+    elif s in ["Circle", "Sphere"]:
+        txt = f"Radius: {v1}{u}"
+    elif s in ["Square", "Cube"]:
+        txt = f"Side: {v1}{u}"
+    else:
+        txt = f"Base: {v1}{u} | Height: {v2}{u}"
+    draw_t.write(txt, align="center", font=("Courier", 14, "bold"))
 
 
-    def render_2d(s, v1, v2, u, cx, cy, VIS):
-        draw_t.clear()
-        # Pull color from app_state; default to light blue if not set
-        current_color = app_state.get("color", "#E0FFFF")
-        draw_t.color(current_color)
-        draw_t.pensize(2)
+def save_results():
+    try:
+        sh, u = app_state["shape"], app_state["unit"]
+        filename = f"CAD_Export_{sh}.txt"
+        with open(filename, "w") as f:
+            f.write(f"DESIGNER PRO EXPORT\nShape: {sh}\nColor: {app_state['color']}\n")
+        screen.textinput("Success", f"Saved to {filename}")
+    except Exception as e:
+        screen.textinput("Error", str(e))
 
-        area = 0
-        perimeter = 0
-        hypot = 0
 
-        # --- START DRAWING & FILL ---
+def render_2d(s, v1, v2, u, cx, cy, VIS):
+    H = screen.window_height()
+    draw_t.color(app_state["color"])
+    draw_t.pensize(2)
+    area, perimeter, hypot = 0, 0, 0
+
+    draw_t.begin_fill()
+    if s == "Circle":
+        draw_t.goto(cx, cy - VIS / 2)
+        draw_t.pendown()
+        draw_t.circle(VIS / 2)
+        area, perimeter = math.pi * (v1 ** 2), 2 * math.pi * v1
+    elif s == "Triangle":
+        draw_t.goto(cx - VIS / 2, cy - VIS / 2)
+        draw_t.pendown()
+        draw_t.goto(cx + VIS / 2, cy - VIS / 2)
+        draw_t.goto(cx, cy + VIS / 2)
+        draw_t.goto(cx - VIS / 2, cy - VIS / 2)
+        area, hypot = 0.5 * v1 * v2, math.sqrt((v1 / 2) ** 2 + v2 ** 2)
+        perimeter = v1 + (2 * hypot)
+    elif s in ["Rectangle", "Square"]:
+        w_v, h_v = VIS, (VIS if s == "Square" else VIS * 0.6)
+        draw_t.goto(cx - w_v / 2, cy - h_v / 2)
+        draw_t.pendown()
+        for _ in range(2): draw_t.forward(w_v); draw_t.left(90); draw_t.forward(h_v); draw_t.left(90)
+        area, perimeter = v1 * (v1 if s == "Square" else v2), 2 * (v1 + (v1 if s == "Square" else v2))
+    elif s in ["Hexagon", "Polygon"]:
+        sd = 6 if s == "Hexagon" else app_state["sides"]
+        angle = 360 / sd
+        side_vis = (VIS * 0.7) * (2 * math.sin(math.pi / sd))
+        apothem = (side_vis / 2) / math.tan(math.pi / sd)
+        draw_t.penup()
+        draw_t.goto(cx - side_vis / 2, cy - apothem)
+        draw_t.pendown()
+        for _ in range(sd): draw_t.forward(side_vis); draw_t.left(angle)
+        area, perimeter = (sd * v1 ** 2) / (4 * math.tan(math.pi / sd)), sd * v1
+    elif s == "Parallelogram":
+        sl, hv = VIS * 0.4, VIS * 0.6
+        draw_t.goto(cx - VIS / 2, cy - hv / 2)
+        draw_t.pendown()
+        draw_t.forward(VIS)
+        draw_t.goto(cx + VIS / 2 + sl, cy + hv / 2)
+        draw_t.backward(VIS)
+        draw_t.goto(cx - VIS / 2, cy - hv / 2)
+        area, sl_r = v1 * v2, (sl / VIS) * v1
+        perimeter = 2 * (v1 + math.sqrt(v2 ** 2 + sl_r ** 2))
+    draw_t.end_fill()
+
+    draw_t.penup()
+    draw_t.color(THEME["text"])
+    draw_t.goto(cx, -H / 2 + 110)
+    draw_t.write(f"Area: {area:.2f} {u}²", align="center", font=("Courier", 16, "bold"))
+    draw_t.goto(cx, -H / 2 + 80)
+    draw_t.write(f"Perimeter: {perimeter:.2f} {u}", align="center", font=("Courier", 14, "bold"))
+    if s == "Triangle": draw_t.goto(cx, -H / 2 + 50); draw_t.write(f"Hypotenuse: {hypot:.2f} {u}", align="center",
+                                                                   font=("Courier", 12, "italic"))
+
+
+def render_3d(s, v1, v2, u, cx, cy, VIS):
+    H = screen.window_height()
+    FILL_COLOR, EDGE_COLOR = app_state["color"], "#008B8B"
+    draw_t.color(FILL_COLOR)
+    draw_t.pensize(2)
+    vol = 0
+    if s == "Cone":
+        apex = (cx, cy + VIS / 2)
+        base_y = cy - VIS / 2
+
+        # A. Fill the Side Walls (Triangle look)
+        draw_t.penup()
+        draw_t.goto(cx - VIS / 2, base_y)
+        draw_t.pendown()
+        draw_t.color(FILL_COLOR)
         draw_t.begin_fill()
-
-        if s == "Circle":
-            draw_t.goto(cx, cy - VIS / 2)
-            draw_t.pendown()
-            draw_t.circle(VIS / 2)
-            draw_t.penup()
-            area = math.pi * (v1 ** 2)
-            perimeter = 2 * math.pi * v1
-
-        elif s == "Triangle":
-            draw_t.goto(cx - VIS / 2, cy - VIS / 2)
-            draw_t.pendown()
-            draw_t.goto(cx + VIS / 2, cy - VIS / 2)  # Base
-            draw_t.goto(cx, cy + VIS / 2)  # Apex
-            draw_t.goto(cx - VIS / 2, cy - VIS / 2)  # Close
-            draw_t.penup()
-            area = 0.5 * v1 * v2
-            hypot = math.sqrt((v1 / 2) ** 2 + v2 ** 2)
-            perimeter = v1 + (2 * hypot)
-
-        elif s in ["Rectangle", "Square"]:
-            w_vis = VIS
-            h_vis = VIS if s == "Square" else VIS * 0.6
-            draw_t.goto(cx - w_vis / 2, cy - h_vis / 2)
-            draw_t.pendown()
-            for _ in range(2):
-                draw_t.forward(w_vis)
-                draw_t.left(90)
-                draw_t.forward(h_vis)
-                draw_t.left(90)
-            draw_t.penup()
-            act_w = v1
-            act_h = v1 if s == "Square" else v2
-            area = act_w * act_h
-            perimeter = 2 * (act_w + act_h)
-
-        elif s in ["Hexagon", "Polygon"]:
-            sides = 6 if s == "Hexagon" else app_state["sides"]
-            angle = 360 / sides
-            side_vis = VIS * (2 * math.sin(math.pi / sides))
-            draw_t.goto(cx - side_vis / 2, cy - VIS / 2)
-            draw_t.pendown()
-            for _ in range(sides):
-                draw_t.forward(side_vis)
-                draw_t.left(angle)
-            draw_t.penup()
-            area = (sides * v1 ** 2) / (4 * math.tan(math.pi / sides))
-            perimeter = sides * v1
-
-        elif s == "Parallelogram":
-            slant_vis = VIS * 0.4
-            h_vis = VIS * 0.6
-            draw_t.goto(cx - VIS / 2, cy - h_vis / 2)
-            draw_t.pendown()
-            draw_t.forward(VIS)
-            draw_t.goto(cx + VIS / 2 + slant_vis, cy + h_vis / 2)
-            draw_t.backward(VIS)
-            draw_t.goto(cx - VIS / 2, cy - h_vis / 2)
-            draw_t.penup()
-            real_slant_x = (slant_vis / VIS) * v1
-            actual_slant = math.sqrt(v2 ** 2 + real_slant_x ** 2)
-            area = v1 * v2
-            perimeter = 2 * (v1 + actual_slant)
-
+        draw_t.goto(apex)
+        draw_t.goto(cx + VIS / 2, base_y)
+        draw_t.goto(cx - VIS / 2, base_y)
         draw_t.end_fill()
-        # --- END DRAWING & FILL ---
+    elif s == "Cylinder":
+        # Define positions to fix "Unresolved reference"
+        base_y = cy - VIS / 2
+        top_y = cy + VIS / 2
 
-        # --- MATH LABELS ---
-        draw_t.color(THEME["text"])
-        draw_t.goto(cx, -VIS / 2 - 80)
-        draw_t.write(f"Area: {area:.2f} {u}²", align="center", font=("Courier", 18, "bold"))
-        draw_t.goto(cx, -VIS / 2 - 110)
-        draw_t.write(f"Perimeter: {perimeter:.2f} {u}", align="center", font=("Courier", 14, "bold"))
-
-        if s == "Triangle":
-            draw_t.goto(cx, -VIS / 2 - 140)
-            draw_t.write(f"Hypotenuse: {hypot:.2f} {u}", align="center", font=("Courier", 12, "italic"))
-
-
-    def render_3d(s, v1, v2, u, cx, cy, VIS):
-        draw_t.clear()
-        draw_t.pensize(2)
-
-        # --- DYNAMIC COLORS ---
-        # Pull the custom color from app_state; default to Cyan if not set
-        FILL_COLOR = app_state.get("color", "#00FFFF")
-
-        # Logic to make the edges slightly darker than the fill color
-        # If using standard CAD colors, we can keep the Dark Cyan or set it to Black
-        EDGE_COLOR = "#008B8B"  # Dark Cyan for crisp lines
-
-        vol = 0
-
-        if s == "Cylinder":
-            # Helper for drawing a filled ellipse cap
-            def oval_cap(y):
-                draw_t.penup()
-                draw_t.goto(cx + VIS / 2, cy + y)
-                draw_t.pendown()
-                draw_t.begin_fill()
-                for i in range(361):
-                    r = math.radians(i)
-                    draw_t.goto(cx + (VIS / 2) * math.cos(r), (cy + y) + (VIS / 6) * math.sin(r))
-                draw_t.end_fill()
-
-            # 1. Fill the Rectangular Body FIRST
-            draw_t.color(FILL_COLOR)
+        def oval_cap(y_pos, f=False):
             draw_t.penup()
-            draw_t.goto(cx - VIS / 2, cy - VIS / 2)
-            draw_t.begin_fill()
-            draw_t.goto(cx + VIS / 2, cy - VIS / 2)
-            draw_t.goto(cx + VIS / 2, cy + VIS / 2)
-            draw_t.goto(cx - VIS / 2, cy + VIS / 2)
-            draw_t.goto(cx - VIS / 2, cy - VIS / 2)
-            draw_t.end_fill()
-
-            # 2. Fill the Top and Bottom Caps
-            oval_cap(-VIS / 2)  # Bottom
-            oval_cap(VIS / 2)  # Top
-
-            # 3. Draw Dark Outlines (After all fills are done)
-            draw_t.color(EDGE_COLOR)
-            # Vertical side lines
-            for dx in [-VIS / 2, VIS / 2]:
-                draw_t.penup()
-                draw_t.goto(cx + dx, cy - VIS / 2)
-                draw_t.pendown()
-                draw_t.goto(cx + dx, cy + VIS / 2)
-
-            # Ellipse outlines (No fill)
-            for y in [-VIS / 2, VIS / 2]:
-                draw_t.penup()
-                draw_t.goto(cx + VIS / 2, cy + y)
-                draw_t.pendown()
-                for i in range(361):
-                    r = math.radians(i)
-                    draw_t.goto(cx + (VIS / 2) * math.cos(r), (cy + y) + (VIS / 6) * math.sin(r))
-
-            vol = math.pi * (v1 ** 2) * v2
-
-
-        elif s in ["Cube", "Cuboid"]:
-            w_vis = VIS
-            h_vis = VIS if s == "Cube" else VIS * 0.6
-            off = 60
-            f_x, f_y = cx - w_vis / 2, cy - h_vis / 2
-            b_x, b_y = f_x + off, f_y + off
-
-            # 1. Fill all faces bright Cyan
-            draw_t.color(FILL_COLOR)
-            for start_x, start_y in [(b_x, b_y), (f_x, f_y)]:  # Back then Front
-                draw_t.penup()
-                draw_t.goto(start_x, start_y)
-                draw_t.begin_fill()
-                for _ in range(2): draw_t.forward(w_vis); draw_t.left(90); draw_t.forward(h_vis); draw_t.left(90)
-                draw_t.end_fill()
-            draw_t.begin_fill()  # Connecting walls
-            draw_t.goto(f_x, f_y + h_vis)
-            draw_t.goto(b_x, b_y + h_vis)
-            draw_t.goto(b_x + w_vis, b_y + h_vis)
-            draw_t.goto(f_x + w_vis, f_y + h_vis)
-            draw_t.goto(f_x + w_vis, f_y)
-            draw_t.goto(b_x + w_vis, b_y)
-            draw_t.goto(b_x + w_vis, b_y + h_vis)
-            draw_t.goto(f_x + w_vis, f_y + h_vis)
-            draw_t.end_fill()
-
-            # 2. Draw Dark Cyan Outlines
-            draw_t.color(EDGE_COLOR)
-            for start_x, start_y in [(f_x, f_y), (b_x, b_y)]:
-                draw_t.penup()
-                draw_t.goto(start_x, start_y)
-                draw_t.pendown()
-                for _ in range(2): draw_t.forward(w_vis); draw_t.left(90); draw_t.forward(h_vis); draw_t.left(90)
-            for dx, dy in [(0, 0), (w_vis, 0), (w_vis, h_vis), (0, h_vis)]:
-                draw_t.penup()
-                draw_t.goto(f_x + dx, f_y + dy)
-                draw_t.pendown()
-                draw_t.goto(b_x + dx, b_y + dy)
-            vol = v1 ** 3 if s == "Cube" else v1 * v2 * app_state.get("depth", 10)
-
-
-        elif s == "Pyramid":
-
-            off = 60
-
-            apex = (cx, cy + VIS / 2)
-
-            # Corners: BL, BR, TR, TL
-
-            c = [(cx - VIS / 2, cy - VIS / 2), (cx + VIS / 2, cy - VIS / 2),
-
-                 (cx + VIS / 2 + off, cy - VIS / 2 + off), (cx - VIS / 2 + off, cy - VIS / 2 + off)]
-
-            # 1. Fill the Base FIRST
-
-            draw_t.color(FILL_COLOR)
-
-            draw_t.penup()
-
-            draw_t.goto(c[0])
-
+            draw_t.goto(cx + VIS / 2, y_pos)
             draw_t.pendown()
-
-            draw_t.begin_fill()
-
-            for p in c: draw_t.goto(p)
-
-            draw_t.goto(c[0])
-
-            draw_t.end_fill()
-
-            # 2. Fill each Face SEPARATELY (This fixes the ghost triangle)
-
-            for i in range(4):
-                draw_t.penup()
-
-                draw_t.goto(c[i])  # Start at a corner
-
-                draw_t.pendown()
-
-                draw_t.begin_fill()
-
-                draw_t.goto(apex)  # Go to top
-
-                draw_t.goto(c[(i + 1) % 4])  # Go to next corner
-
-                draw_t.goto(c[i])  # Close the triangle
-
-                draw_t.end_fill()
-
-            # 3. Draw Dark Outlines
-
-            draw_t.color(EDGE_COLOR)
-
-            # Base outline
-
-            draw_t.penup()
-            draw_t.goto(c[0])
-            draw_t.pendown()
-
-            for p in c: draw_t.goto(p)
-
-            draw_t.goto(c[0])
-
-            # Apex lines
-
-            for p in c:
-                draw_t.penup()
-
-                draw_t.goto(p)
-
-                draw_t.pendown()
-
-                draw_t.goto(apex)
-
-            vol = (1 / 3) * (v1 ** 2) * v2
-
-
-        elif s == "Sphere":
-            # 1. Solid Fill
-            draw_t.penup()
-            draw_t.goto(cx, cy - VIS / 2)
-            draw_t.color(FILL_COLOR)
-            draw_t.begin_fill()
-            draw_t.circle(VIS / 2)
-            draw_t.end_fill()
-            # 2. Outlines (Outer ring and Depth belt)
-            draw_t.color(EDGE_COLOR)
-            draw_t.pendown()
-            draw_t.circle(VIS / 2)
-            draw_t.penup()
-            draw_t.goto(cx + VIS / 2, cy)
-            draw_t.pendown()
+            if f: draw_t.begin_fill()
             for i in range(361):
                 r = math.radians(i)
-                draw_t.goto(cx + (VIS / 2) * math.cos(r), cy + (VIS / 6) * math.sin(r))
-            vol = (4 / 3) * math.pi * (v1 ** 3)
+                draw_t.goto(cx + (VIS / 2) * math.cos(r), y_pos + (VIS / 6) * math.sin(r))
+            if f: draw_t.end_fill()
 
-        # Label
+        # 1. Fill the Solid Body
+        draw_t.color(FILL_COLOR)
         draw_t.penup()
-        draw_t.color(THEME["text"])
-        draw_t.goto(cx, -VIS / 2 - 120)
-        draw_t.write(f"Volume: {vol:.2f} {u}³", align="center", font=("Courier", 18, "bold"))
+        draw_t.goto(cx - VIS / 2, base_y)
+        draw_t.pendown()
+        draw_t.begin_fill()
+        draw_t.goto(cx + VIS / 2, base_y)
+        draw_t.goto(cx + VIS / 2, top_y)
+        draw_t.goto(cx - VIS / 2, top_y)
+        draw_t.goto(cx - VIS / 2, base_y)
+        draw_t.end_fill()
+
+        # 2. Fill Caps (Shadow for bottom, Color for top)
+        draw_t.color(EDGE_COLOR)
+        oval_cap(base_y, f=True)
+        draw_t.color(FILL_COLOR)
+        oval_cap(top_y, f=True)
+
+        # 3. Draw Sharp Outlines
+        draw_t.color(EDGE_COLOR)
+        for dx in [-VIS / 2, VIS / 2]:
+            draw_t.penup()
+            draw_t.goto(cx + dx, base_y)
+            draw_t.pendown()
+            draw_t.goto(cx + dx, top_y)
+        oval_cap(base_y, f=False)
+        oval_cap(top_y, f=False)
+
+        vol = math.pi * (v1 ** 2) * v2
+
+    elif s in ["Cube", "Cuboid"]:
+        wv, hv, off = VIS, (VIS if s == "Cube" else VIS * 0.6), 60
+        fx, fy = cx - wv / 2, cy - hv / 2
+        bx, by = fx + off, fy + off
+        draw_t.color(FILL_COLOR)
+        for sx, sy in [(bx, by), (fx, fy)]:
+            draw_t.penup()
+            draw_t.goto(sx, sy)
+            draw_t.begin_fill()
+            for _ in range(2): draw_t.forward(wv); draw_t.left(90); draw_t.forward(hv); draw_t.left(90)
+            draw_t.end_fill()
+        draw_t.begin_fill()
+        draw_t.goto(fx, fy + hv)
+        draw_t.goto(bx, by + hv)
+        draw_t.goto(bx + wv, by + hv)
+        draw_t.goto(fx + wv, fy + hv)
+        draw_t.goto(fx + wv, fy)
+        draw_t.goto(bx + wv, by)
+        draw_t.goto(bx + wv, by + hv)
+        draw_t.goto(fx + wv, fy + hv)
+        draw_t.end_fill()
+        draw_t.color(EDGE_COLOR)
+        for sx, sy in [(fx, fy), (bx, by)]:
+            draw_t.penup()
+            draw_t.goto(sx, sy)
+            draw_t.pendown()
+            for _ in range(2): draw_t.forward(wv); draw_t.left(90); draw_t.forward(hv); draw_t.left(90)
+        for dx, dy in [(0, 0), (wv, 0), (wv, hv), (0, hv)]:
+            draw_t.penup()
+            draw_t.goto(fx + dx, fy + dy)
+            draw_t.pendown()
+            draw_t.goto(bx + dx, by + dy)
+        vol = v1 ** 3 if s == "Cube" else v1 * v2 * app_state["depth"]
+    elif s == "Pyramid":
+        # 1. Setup Coordinates
+        off, apex = 60, (cx, cy + VIS / 2)
+        # Corners: Front-Left, Front-Right, Back-Right, Back-Left
+        c = [(cx - VIS / 2, cy - VIS / 2),
+             (cx + VIS / 2, cy - VIS / 2),
+             (cx + VIS / 2 + off, cy - VIS / 2 + off),
+             (cx - VIS / 2 + off, cy - VIS / 2 + off)]
+
+        # 2. Draw and Fill the Base (Darker shade)
+        draw_t.penup()
+        draw_t.goto(c[0])  # FIXED: Move to first point in list
+        draw_t.pendown()
+        draw_t.color(EDGE_COLOR)
+        draw_t.begin_fill()
+        for p in c:
+            draw_t.goto(p)
+        draw_t.goto(c[0])  # Close the loop
+        draw_t.end_fill()
+
+        # 3. Draw and Fill the 4 Triangular Faces (Cyan)
+        draw_t.color(FILL_COLOR)
+        for i in range(4):
+            draw_t.penup()
+            draw_t.goto(c[i])  # Teleport to corner to prevent "Spikes"
+            draw_t.pendown()
+            draw_t.begin_fill()
+            draw_t.goto(apex)
+            draw_t.goto(c[(i + 1) % 4])
+            draw_t.goto(c[i])
+            draw_t.end_fill()
+
+        # 4. Draw Dark Outlines (Edges)
+        draw_t.color(EDGE_COLOR)
+        # Base Outline
+        draw_t.penup();
+        draw_t.goto(c[0]);
+        draw_t.pendown()
+        for p in c: draw_t.goto(p)
+        draw_t.goto(c[0])
+        # Apex Lines
+        for p in c:
+            draw_t.penup()
+            draw_t.goto(p)
+            draw_t.pendown()
+            draw_t.goto(apex)
+
+        vol = (1 / 3) * (v1 ** 2) * v2
+
+    elif s == "Sphere":
+        draw_t.penup()
+        draw_t.goto(cx, cy - VIS / 2)
+        draw_t.begin_fill()
+        draw_t.circle(VIS / 2)
+        draw_t.end_fill()
+        draw_t.color(EDGE_COLOR)
+        draw_t.circle(VIS / 2)
+        draw_t.penup()
+        draw_t.goto(cx + VIS / 2, cy)
+        draw_t.pendown()
+        for i in range(361):
+            r = math.radians(i)
+            draw_t.goto(cx + (VIS / 2) * math.cos(r), cy + (VIS / 6) * math.sin(r))
+        vol = (4 / 3) * math.pi * (v1 ** 3)
+    draw_t.penup()
+    draw_t.color(THEME["text"])
+    draw_t.goto(cx, -H / 2 + 50)
+    draw_t.write(f"Volume: {vol:.2f} {u}³", align="center", font=("Courier", 18, "bold"))
 
 
-    def draw_ui_button(text, x, y, w, h, active):
-        ui_t.goto(x, y)
-        ui_t.color(THEME["btn_active"] if active else THEME["btn_idle"])
-        ui_t.begin_fill()
-        for _ in range(2): ui_t.forward(w); ui_t.left(90); ui_t.forward(h); ui_t.left(90)
-        ui_t.end_fill()
-        ui_t.color(THEME["text"])
-        ui_t.goto(x + w / 2, y + h / 4)
-        ui_t.write(text, align="center", font=("Courier", 11, "bold"))
+def draw_ui_button(text, x, y, w, h, active):
+    ui_t.penup()
+    ui_t.goto(x, y)
+    ui_t.color(THEME["btn_active"] if active else THEME["btn_idle"])
+    ui_t.begin_fill()
+    for _ in range(2): ui_t.forward(w); ui_t.left(90); ui_t.forward(h); ui_t.left(90)
+    ui_t.end_fill()
+    ui_t.color(THEME["text"])
+    ui_t.goto(x + w / 2, y + h / 4)
+    ui_t.write(text, align="center", font=("Courier", 10, "bold"))
 
 
-    def draw_sidebar():
-        ui_t.clear()
-        ui_t.goto(-700, -600)
-        ui_t.color(THEME["sidebar"])
-        ui_t.begin_fill()
-        for _ in range(2): ui_t.forward(300); ui_t.left(90); ui_t.forward(1200); ui_t.left(90)
-        ui_t.end_fill()
-        ui_t.goto(-550, 400)
-        ui_t.color(THEME["btn_active"])
-        ui_t.write("DESIGNER PRO", align="center", font=("Courier", 22, "bold"))
+def draw_sidebar():
+    W, H = screen.window_width(), screen.window_height()
+    ui_t.clear()
 
-        draw_ui_button("2D MODE", -680, 340, 125, 40, app_state["category"] == "2D")
-        draw_ui_button("3D MODE", -545, 340, 125, 40, app_state["category"] == "3D")
+    # Background Panel
+    ui_t.penup()
+    ui_t.goto(-W / 2, -H / 2)
+    ui_t.color(THEME["sidebar"])
+    ui_t.begin_fill()
+    for _ in range(2):
+        ui_t.forward(300)
+        ui_t.left(90)
+        ui_t.forward(H)
+        ui_t.left(90)
+    ui_t.end_fill()
 
-        shapes = ["Triangle", "Circle", "Rectangle", "Square", "Hexagon", "Parallelogram", "Polygon"] if app_state["category"] == "2D" \
+    # Title & Mode Buttons
+    ui_t.goto(-W / 2 + 150, H / 2 - 80)
+    ui_t.color(THEME["btn_active"])
+    ui_t.write("DESIGNER PRO", align="center", font=("Courier", 20, "bold"))
+
+    draw_ui_button("2D MODE", -W / 2 + 20, H / 2 - 150, 125, 40, app_state["category"] == "2D")
+    draw_ui_button("3D MODE", -W / 2 + 155, H / 2 - 150, 125, 40, app_state["category"] == "3D")
+
+    # Shape List
+    shs = ["Triangle", "Circle", "Rectangle", "Square", "Hexagon", "Parallelogram", "Polygon"] if app_state[
+                                                                                                      "category"] == "2D" \
+        else ["Cube", "Cuboid", "Cylinder", "Pyramid", "Sphere"]
+    y_off = H / 2 - 205
+    for s in shs:
+        draw_ui_button(s, -W / 2 + 20, y_off, 260, 32, app_state["shape"] == s)
+        y_off -= 38
+
+    # Bottom Menu
+    draw_ui_button("CHANGE COLOR", -W / 2 + 20, -H / 2 + 200, 260, 45, False)
+    draw_ui_button("EXPORT DATA", -W / 2 + 20, -H / 2 + 140, 260, 45, False)
+    draw_ui_button("EDIT DIMENSIONS", -W / 2 + 20, -H / 2 + 80, 260, 45, False)
+    draw_ui_button("EXIT", -W / 2 + 20, -H / 2 + 20, 260, 45, False)
+
+
+def refresh():
+    W, H = screen.window_width(), screen.window_height()
+    draw_grid()
+    draw_sidebar()
+
+    draw_t.clear()
+    # Center the shape in the workspace
+    cx = (-W / 2 + 300 + W / 2) / 2
+    draw_specs(cx, 0, 300)
+
+    if app_state["category"] == "2D":
+        render_2d(app_state["shape"], app_state["val1"], app_state["val2"], app_state["unit"], cx, 0, 300)
+    else:
+        render_3d(app_state["shape"], app_state["val1"], app_state["val2"], app_state["unit"], cx, 0, 300)
+
+    # CRITICAL: This pushes all the drawing to the monitor
+    screen.update()
+
+
+def handle_click(x, y):
+    W, H = screen.window_width(), screen.window_height()
+
+    # --- 1. MODE SELECTION (2D vs 3D) ---
+    # Detection for the 2D and 3D toggle buttons at the top
+    if -W / 2 + 20 < x < -W / 2 + 145 and H / 2 - 150 < y < H / 2 - 110:
+        app_state["category"], app_state["shape"], app_state["color"] = "2D", "Rectangle", "#2ECC71"
+    elif -W / 2 + 155 < x < -W / 2 + 280 and H / 2 - 150 < y < H / 2 - 110:
+        app_state["category"], app_state["shape"], app_state["color"] = "3D", "Cube", "#00FFFF"
+
+    # --- 2. SIDEBAR COLUMN DETECTION ---
+    elif -W / 2 + 20 < x < -W / 2 + 280:
+        shs = ["Triangle", "Circle", "Rectangle", "Square", "Hexagon", "Parallelogram", "Polygon"] if app_state[
+                                                                                                          "category"] == "2D" \
             else ["Cube", "Cuboid", "Cylinder", "Pyramid", "Sphere"]
-        y = 280
-        for s in shapes:
-            draw_ui_button(s, -680, y, 260, 35, app_state["shape"] == s)
-            y -= 45
 
-        # --- BUTTONS AT THE BOTTOM ---
-        draw_ui_button("CHANGE COLOR", -680, -230, 260, 45, False)
-        draw_ui_button("EXPORT DATA", -680, -290, 260, 45, False)
-        draw_ui_button("EDIT DIMENSIONS", -680, -350, 260, 45, False)
-        draw_ui_button("EXIT", -680, -410, 260, 45, False)
+        # Shape Selection Loop
+        y_check = H / 2 - 205
+        for s in shs:
+            if y_check < y < y_check + 32:
+                app_state["shape"] = s
+            y_check -= 38
 
+        # --- 3. BOTTOM MENU BUTTONS ---
+        # CHANGE COLOR Button
+        if -H / 2 + 200 < y < -H / 2 + 245:
+            new_col = screen.textinput("Color Picker", "Enter Name or Hex:")
+            if new_col:
+                try:
+                    ui_t.color(new_col)  # Test if valid
+                    app_state["color"] = new_col
+                except:
+                    pass
 
-    def refresh():
-        draw_sidebar()
-        draw_t.clear()
-        cx, cy, VIS = 200, 0, 300
+        # EXPORT DATA Button
+        elif -H / 2 + 140 < y < -H / 2 + 185:
+            save_results()
 
-        # Ensure draw_t is using the latest app_state color
-        draw_t.color(app_state.get("color", THEME["text"]))
-
-        draw_specs(cx, cy, VIS)
-
-        if app_state["category"] == "2D":
-            # Pass the color or let render_2d pull it from app_state
-            render_2d(app_state["shape"], app_state["val1"], app_state["val2"], app_state["unit"], cx, cy, VIS)
-        else:
-            render_3d(app_state["shape"], app_state["val1"], app_state["val2"], app_state["unit"], cx, cy, VIS)
-
-        screen.update()
-
-
-    def save_results():
-        try:
+        # EDIT DIMENSIONS Button
+        elif -H / 2 + 80 < y < -H / 2 + 125:
             sh = app_state["shape"]
             u = app_state["unit"]
-            v1, v2 = app_state["val1"], app_state["val2"]
 
-            filename = f"CAD_Export_{sh}.txt"
-            with open(filename, "w") as f:
-                f.write(f"--- Designer Pro CAD Export ---\n")
-                f.write(f"Shape: {sh}\n")
-                f.write(f"Dimensions: {v1}{u} x {v2}{u}\n")
+            if sh == "Cuboid":
+                v1 = screen.numinput("W", f"Width ({u}):", default=app_state["val1"])
+                if v1 is not None: app_state["val1"] = v1
+                v2 = screen.numinput("H", f"Height ({u}):", default=app_state["val2"])
+                if v2 is not None: app_state["val2"] = v2
+                v3 = screen.numinput("D", f"Depth ({u}):", default=app_state["depth"])
+                if v3 is not None: app_state["depth"] = v3
 
-                if app_state["category"] == "2D":
-                    # Note: You can pull these logic blocks from your render_2d function
-                    area = v1 * v2  # Simplified example
-                    f.write(f"Area: {area:.2f} {u}2\n")
-                else:
-                    vol = math.pi * (v1 ** 2) * v2 if sh == "Cylinder" else v1 ** 3
-                    f.write(f"Volume: {vol:.2f} {u}3\n")
+            elif sh in ["Circle", "Sphere", "Cylinder"]:
+                v = screen.numinput("R", f"Radius ({u}):", default=app_state["val1"])
+                if v is not None: app_state["val1"] = v
+                if sh == "Cylinder":
+                    h = screen.numinput("H", f"Height ({u}):", default=app_state["val2"])
+                    if h is not None: app_state["val2"] = h
 
-                f.write(f"-------------------------------\n")
+            elif sh == "Polygon":
+                v1 = screen.numinput("Side", f"Length ({u}):", default=app_state["val1"])
+                if v1 is not None: app_state["val1"] = v1
+                v2 = screen.numinput("Sides", "Count:", default=app_state["sides"])
+                if v2 is not None: app_state["sides"] = int(v2)
 
-            # UI Feedback
-            screen.textinput("Success", f"Data saved to {filename}\nPress OK to continue.")
-        except Exception as e:
-            screen.textinput("Error", f"Failed to save: {e}")
+            else:  # Triangle, Rectangle, Parallelogram, Pyramid
+                v1 = screen.numinput(sh, f"Base/Width ({u}):", default=app_state["val1"])
+                if v1 is not None: app_state["val1"] = v1
+                v2 = screen.numinput(sh, f"Height ({u}):", default=app_state["val2"])
+                if v2 is not None: app_state["val2"] = v2
 
+        # EXIT Button
+        elif -H / 2 + 20 < y < -H / 2 + 65:
+            screen.bye()
+            return
 
-    def handle_click(x, y):
-        # --- Category Selection (2D vs 3D) ---
-        if -680 < x < -555 and 340 < y < 380:
-            app_state["category"] = "2D"
-            app_state["shape"] = "Rectangle"
-            app_state["color"] = "#2ECC71"  # Green default for 2D
-        elif -545 < x < -420 and 340 < y < 380:
-            app_state["category"] = "3D"
-            app_state["shape"] = "Cube"
-            app_state["color"] = "#00FFFF"  # Cyan default for 3D
-
-        # --- Sidebar Button Logic ---
-        elif -680 < x < -420:
-            # Determine available shapes
-            if app_state["category"] == "2D":
-                shapes = ["Triangle", "Circle", "Rectangle", "Square", "Hexagon", "Parallelogram", "Polygon"]
-            else:
-                shapes = ["Cube", "Cuboid", "Cylinder", "Pyramid", "Sphere"]
-
-            # 1. Shape Selection
-            y_btn = 280
-            for s in shapes:
-                if y_btn < y < y_btn + 35:
-                    app_state["shape"] = s
-                y_btn -= 45
-
-            # 2. CHANGE COLOR Button (-230 range)
-            if -230 < y < -185:
-                new_col = screen.textinput("Color Picker", "Enter color (Name or Hex):")
-                if new_col:
-                    try:
-                        ui_t.color(new_col)  # Test validity
-                        app_state["color"] = new_col
-                    except:
-                        pass
-
-            # 3. EXPORT DATA Button (-290 range)
-            elif -290 < y < -245:
-                save_results()
-
-            # 4. EDIT DIMENSIONS Button (-350 range)
-            elif -350 < y < -305:
-                sh = app_state["shape"]
-                u = app_state["unit"]
-
-                if sh == "Cuboid":
-                    w = screen.numinput("Cuboid", f"Enter Width ({u}):", default=app_state["val1"])
-                    h = screen.numinput("Cuboid", f"Enter Height ({u}):", default=app_state["val2"])
-                    d = screen.numinput("Cuboid", f"Enter Depth ({u}):", default=app_state.get("depth", 10.0))
-                    if w: app_state["val1"] = w
-                    if h: app_state["val2"] = h
-                    if d: app_state["depth"] = d
-
-                elif sh == "Cylinder":
-                    r = screen.numinput("Cylinder", f"Enter Radius ({u}):", default=app_state["val1"])
-                    h = screen.numinput("Cylinder", f"Enter Height ({u}):", default=app_state["val2"])
-                    if r: app_state["val1"] = r
-                    if h: app_state["val2"] = h
-
-                elif sh in ["Circle", "Sphere"]:
-                    v = screen.numinput(sh, f"Enter Radius ({u}):", default=app_state["val1"])
-                    if v: app_state["val1"] = v
-
-                elif sh in ["Square", "Cube"]:
-                    v = screen.numinput(sh, f"Enter Side Length ({u}):", default=app_state["val1"])
-                    if v: app_state["val1"] = v
-
-                elif sh == "Polygon":
-                    v1 = screen.numinput("Polygon", f"Enter Side Length ({u}):", default=app_state["val1"])
-                    v2 = screen.numinput("Polygon", "Enter Number of Sides:", default=app_state["sides"])
-                    if v1: app_state["val1"] = v1
-                    if v2: app_state["sides"] = int(v2)
-
-                else:  # Triangle, Rectangle, Parallelogram, Pyramid
-                    v1 = screen.numinput(sh, f"Enter Base/Width ({u}):", default=app_state["val1"])
-                    v2 = screen.numinput(sh, f"Enter Height ({u}):", default=app_state["val2"])
-                    if v1: app_state["val1"] = v1
-                    if v2: app_state["val2"] = v2
-
-            # 5. EXIT Button (-410 range)
-            elif -410 < y < -365:
-                screen.bye()
-                return
-
-        refresh()
-
-
-    draw_grid()
     refresh()
-    screen.onclick(handle_click)
-    screen.listen()
-    turtle.done()
+if __name__ == "__main__":
+        screen.listen()
+        screen.onclick(handle_click)
+        refresh()
+        try:
+            turtle.mainloop()
+        except Exception as e:
+            print(f"Window closed: {e}")
