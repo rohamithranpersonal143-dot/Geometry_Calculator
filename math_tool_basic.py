@@ -68,7 +68,7 @@ while True:
                 interior_angle = ((num_sides - 2) * 180) / num_sides
                 area = (num_sides * side_length ** 2) / (4 * math.tan(math.pi / num_sides))
                 print(f"> Each interior angle: {interior_angle:.2f} degrees")
-                print(f"> Total Area: {area:.2f}²")
+                print(f"> Total Area: {area:.2f} {unit}²")
                 print(f"> Perimeter: {num_sides * side_length:.2f} {unit}")
             except ValueError:
                 print("> Please enter valid numbers for sides and length.")
@@ -121,4 +121,3 @@ while True:
                 print("> Please enter a valid name for your shape.")
         except ValueError:
             print("> Error: Please enter numbers only for dimensions!")
-
