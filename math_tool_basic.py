@@ -6,7 +6,7 @@ while True:
     Shape_type = str(input("Shape type (3D or 2D): ")).strip().upper()
 
     if Shape_type == "2D":
-        Shape_2D = str(input("Shape (Triangle, Circle, Rectangle, Square, Parallelogram, Hexagon, a custom polygon or Exit): ")).strip().capitalize()
+        Shape_2D = str(input("Enter a 2D shape or Exit: ")).strip().capitalize()
 
         if Shape_2D == "Triangle":
             Base = float(input(f"Base({unit}): "))
@@ -74,7 +74,7 @@ while True:
                 print("> Please enter valid numbers for sides and length.")
 
     elif Shape_type == "3D":
-        Shape_3D = str(input("Shape (Cube, Cuboid, Sphere, Cylinder, Pyramid, Cone or Exit): ")).strip().capitalize()
+        Shape_3D = str(input("Enter a shape (Cube, Cuboid, Sphere, Cylinder, Pyramid, Cone or Exit): ")).strip().capitalize()
         try:
             if Shape_3D == "Cube":
                 Length = float(input(f"Length of any edge ({unit}): "))
