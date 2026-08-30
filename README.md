@@ -1,5 +1,6 @@
 # 📐 Geometry Calculator
 I made a simple geometry calculator in Python. I'm 12 and it seemed like a pretty useful tool for students of all ages. I'm looking to upgrade this project so I would really like the opinions of those who try it!
+p.s these took a LOT of time to type by hand all of this
 
 ## ✨ Features
 * **2D Shapes:** Triangle, Circle, Rectangle, Square, Parallelogram, Hexagon.
