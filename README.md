@@ -1,43 +1,38 @@
-# 📐 OmniMath Engine
+# 🎨 GeoTrace Vector
 
-An interactive, high-precision geometry analytics dashboard built using Python and Streamlit. **OmniMath Engine** offers instant multi-dimensional calculations for 2D surfaces and 3D spatial solids within a unified, responsive web interface.
+A dynamic geometric renderer that utilizes Python's native `turtle` graphics framework to bring mathematical shapes to life. **GeoTrace Vector** calculates dimensions, structural lines, and geometric angles, visualizing them through animated, real-time code execution.
 
 ## ✨ Key Features
-- **Dual Workspace Architecture:** Toggle seamlessly between 2D Shape Analytics (perimeter/area) and 3D Spatial Volumetrics.
-- **Dynamic Scale Profiles:** Built-in runtime unit transformations supporting metric (`m`, `cm`), imperial (`in`, `ft`), or user-defined custom settings.
-- **Robust Math Solvers:** Advanced computing logic to safely handle trigonometric profiles, interior angles, and multi-sided custom regular polygons without domain errors.
-- **Responsive Metrics UI:** Streamlit grid components optimized for beautiful visualization across devices.
+- **Live Vector Rendering:** Converts procedural math parameters into smooth, live canvas animations.
+- **Automated Geometry Engine:** Calculates exact spatial coordinates, headings, and interior angles mathematically.
+- **Interactive Execution:** Prompts user inputs dynamically via the GUI console window before executing canvas sketches.
+- **Zero External Dependencies:** Built entirely using core Python standard modules with zero setup configurations required.
 
 ## 📁 Repository Directory Map
 ```text
-omnimath-engine/
-├── .gitignore          # Filters system clutter (venv/, __pycache__/)
-├── LICENSE            # Open-source permissions (MIT)
-├── README.md          # Project overview & deployment documentation
-├── requirements.txt   # Web framework dependencies configurations
-└── main.py            # Primary application UI layout entrypoint
+geotrace-vector/
+├── .gitignore          # Filters out system runtime clutter
+├── LICENSE            # Open-source licensing parameters (MIT)
+├── README.md          # Technical storefront and runtime guide
+└── main.py            # Primary graphical rendering engine script
 ```
 
-## 🚀 Local Installation & Deployment
+## 🚀 How to Run Locally
 
-Follow these quick commands to spin up the workspace engine on your machine:
+Because this project runs entirely on native Python components, execution is direct and instantaneous:
 
-1. **Clone the repository container:**
+1. **Clone the repository:**
    ```bash
    git clone https://github.com
-   cd omnimath-engine
+   cd geotrace-vector
    ```
 
-2. **Initialize your dependencies profile:**
+2. **Execute the graphics window application:**
    ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Launch the Streamlit dashboard:**
-   ```bash
-   streamlit run main.py
+   python main.py
    ```
 
 ## 🛠️ Built With
-- **Python 3** - Core structural algorithms and pure math logic (`math`).
-- **Streamlit** - High-speed interactive UI rendering framework.
+- **Python 3** - Execution architecture framework.
+- **Turtle Graphics** - Native low-level canvas rendering pipeline.
+- **Math Library** - High-precision spatial trig calculations.
