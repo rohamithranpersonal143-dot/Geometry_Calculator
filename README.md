@@ -1,20 +1,43 @@
-# 📐 Geometry Calculator
-I made a simple geometry calculator in Python. I'm 12 and it seemed like a pretty useful tool for students of all ages. I'm looking to upgrade this project so I would really like the opinions of those who try it!
-p.s these took a LOT of time to type by hand all of this
+# 📐 OmniMath Engine
 
-## ✨ Features
-* **2D Shapes:** Triangle, Circle, Rectangle, Square, Parallelogram, Hexagon.
-* **3D Shapes:** Cube, Cuboid, Sphere, Cylinder, Pyramid, Cone.
-* **Custom Polygons:** Calculate area and angles for any regular shape!
+An interactive, high-precision geometry analytics dashboard built using Python and Streamlit. **OmniMath Engine** offers instant multi-dimensional calculations for 2D surfaces and 3D spatial solids within a unified, responsive web interface.
 
-## 💻 How to Run
-1. Download `geometry_calculator.py`.
-2. Run it in your terminal using:
+## ✨ Key Features
+- **Dual Workspace Architecture:** Toggle seamlessly between 2D Shape Analytics (perimeter/area) and 3D Spatial Volumetrics.
+- **Dynamic Scale Profiles:** Built-in runtime unit transformations supporting metric (`m`, `cm`), imperial (`in`, `ft`), or user-defined custom settings.
+- **Robust Math Solvers:** Advanced computing logic to safely handle trigonometric profiles, interior angles, and multi-sided custom regular polygons without domain errors.
+- **Responsive Metrics UI:** Streamlit grid components optimized for beautiful visualization across devices.
+
+## 📁 Repository Directory Map
+```text
+omnimath-engine/
+├── .gitignore          # Filters system clutter (venv/, __pycache__/)
+├── LICENSE            # Open-source permissions (MIT)
+├── README.md          # Project overview & deployment documentation
+├── requirements.txt   # Web framework dependencies configurations
+└── main.py            # Primary application UI layout entrypoint
+```
+
+## 🚀 Local Installation & Deployment
+
+Follow these quick commands to spin up the workspace engine on your machine:
+
+1. **Clone the repository container:**
    ```bash
-   python geometry_calculator.py
+   git clone https://github.com
+   cd omnimath-engine
    ```
 
-## 🛠️ Planned Upgrades
-* Adding Surface Area for 3D shapes.
-* Visualizing shapes with the `turtle` library.
-* Saving calculation history to a text file.
+2. **Initialize your dependencies profile:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Launch the Streamlit dashboard:**
+   ```bash
+   streamlit run main.py
+   ```
+
+## 🛠️ Built With
+- **Python 3** - Core structural algorithms and pure math logic (`math`).
+- **Streamlit** - High-speed interactive UI rendering framework.
