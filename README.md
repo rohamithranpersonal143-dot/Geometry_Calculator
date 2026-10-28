@@ -1,38 +1,37 @@
-# 🎨 GeoTrace Vector
+# 💻 OmniMath CLI
 
-A dynamic geometric renderer that utilizes Python's native `turtle` graphics framework to bring mathematical shapes to life. **GeoTrace Vector** calculates dimensions, structural lines, and geometric angles, visualizing them through animated, real-time code execution.
+A lightweight, terminal-based geometry computing utility written in pure Python. **OmniMath CLI** provides lightning-fast computations for 2D shape surfaces and 3D spatial solids right from your system console interface.
 
 ## ✨ Key Features
-- **Live Vector Rendering:** Converts procedural math parameters into smooth, live canvas animations.
-- **Automated Geometry Engine:** Calculates exact spatial coordinates, headings, and interior angles mathematically.
-- **Interactive Execution:** Prompts user inputs dynamically via the GUI console window before executing canvas sketches.
-- **Zero External Dependencies:** Built entirely using core Python standard modules with zero setup configurations required.
+- **Zero-Dependency Architecture:** Runs entirely on native Python libraries with no external setup or installations required.
+- **Dual-Engine Analytics:** Easily calculates 2D properties (perimeter, surface area, custom polygon interior angles) and 3D volumetrics (cubes, spheres, cylinders, cones).
+- **Error-Resistant Logic:** Hardened mathematical validation loops to gracefully handle edge cases and zero inputs without crashing the terminal.
+- **Clean Console UI:** Formatted terminal outputs displaying neat metrics directly to your developer shell environment.
 
 ## 📁 Repository Directory Map
 ```text
-geotrace-vector/
-├── .gitignore          # Filters out system runtime clutter
+omnimath-cli/
+├── .gitignore          # Filters out system runtime junk
 ├── LICENSE            # Open-source licensing parameters (MIT)
-├── README.md          # Technical storefront and runtime guide
-└── main.py            # Primary graphical rendering engine script
+├── README.md          # Technical storefront and usage documentation
+└── main.py            # Primary core computing entrypoint script
 ```
 
 ## 🚀 How to Run Locally
 
-Because this project runs entirely on native Python components, execution is direct and instantaneous:
+Because this project relies completely on core Python components, execution is direct and instantaneous:
 
 1. **Clone the repository:**
    ```bash
    git clone https://github.com
-   cd geotrace-vector
+   cd omnimath-cli
    ```
 
-2. **Execute the graphics window application:**
+2. **Run the program script:**
    ```bash
    python main.py
    ```
 
 ## 🛠️ Built With
-- **Python 3** - Execution architecture framework.
-- **Turtle Graphics** - Native low-level canvas rendering pipeline.
-- **Math Library** - High-precision spatial trig calculations.
+- **Python 3** - Primary architectural execution runtime.
+- **Math Standard Library** - High-precision computational trig and geometric tools.
