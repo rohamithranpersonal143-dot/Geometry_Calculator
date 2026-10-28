@@ -1,481 +1,856 @@
-import turtle
-import math
-import datetime
+if __name__ == '__main__':
+    import math
+    import turtle
+    import time
+    import tkinter as tk
 
-# --- INITIALIZATION & THEME ---
-THEME = {
-    "bg": "#0B0E14", "sidebar": "#161B22", "grid": "#1E2530",
-    "btn_idle": "#21262D", "btn_active": "#58A6FF", "text": "#E0FFFF",
-    "accent": "#4A6670", "label": "#F0E68C"
-}
-screen = turtle.Screen()
+    # --- INITIALIZATION ---
+    screen = turtle.Screen()
+    screen.bgcolor("#0B0E14")
+    screen.title("Blueprint Visualizer Pro")
+    screen.tracer(0)
 
-# --- THE "KILL THE WHITE BARS" PATCH ---
-# 1. Removes the window border and title bar
-root = screen._root
-root.overrideredirect(True)
+    mode = screen.textinput("Screen Mode", "F for Fullscreen / W for Windowed:")
+    if mode and mode.strip().upper() == 'F':
+        screen.setup(width=1.0, height=1.0)
+        screen.getcanvas().winfo_toplevel().attributes("-fullscreen", True)
+    else:
+        screen.setup(width=1000, height=800)
 
-# 2. Forces the window to cover the entire screen (including taskbar)
-screen.setup(width=1.0, height=1.0)
-
-# 3. Ensures the window is centered and focused
-root.focus_force()
-# ---------------------------------------
-
-screen.title("Designer Pro CAD")
-screen.bgcolor(THEME["bg"])
-screen.tracer(0)
-
-app_state = {
-    "category": "2D", "shape": "Rectangle", "unit": "cm",
-    "val1": 15.0, "val2": 8.0, "sides": 5, "depth": 10.0,
-    "color": "#2ECC71"
-}
-
-screen = turtle.Screen()
-screen.setup(width=1.0, height=1.0)
-screen.title("Designer Pro CAD")
-screen.bgcolor(THEME["bg"])
-screen.tracer(0)
-
-grid_t, draw_t, ui_t = turtle.Turtle(), turtle.Turtle(), turtle.Turtle()
-for t in [grid_t, draw_t, ui_t]:
+    W_WIDTH, W_HEIGHT = screen.window_width(), screen.window_height()
+    t = turtle.Turtle()
+    t.pensize(2)
     t.hideturtle()
-    t.penup()
+    gt = turtle.Turtle()
+    gt.hideturtle()
+    gt.color("#1E2530")
+    SHAPE_COLOR = "#E0FFFF"
 
 
-def draw_grid():
-    # Force recalculation of screen size to prevent black screen
-    W, H = screen.window_width(), screen.window_height()
-    grid_t.clear()
-    grid_t.color(THEME["grid"])
-    grid_t.pensize(1)
-
-    # Draw vertical lines
-    for x in range(int(-W / 2), int(W / 2), 50):
-        grid_t.penup()
-        grid_t.goto(x, -H / 2)
-        grid_t.pendown()
-        grid_t.goto(x, H / 2)
-    # Draw horizontal lines
-    for y in range(int(-H / 2), int(H / 2), 50):
-        grid_t.penup()
-        grid_t.goto(-W / 2, y)
-        grid_t.pendown()
-        grid_t.goto(W / 2, y)
-
-def draw_specs(cx, cy, VIS):
-    draw_t.color(THEME["label"])
-    u = app_state["unit"]
-    v1, v2 = app_state["val1"], app_state["val2"]
-    s = app_state["shape"]
-
-    # Moved higher to avoid overlap
-    draw_t.goto(cx, cy + VIS / 2 + 130)
-    if s == "Cylinder":
-        txt = f"Radius: {v1}{u} | Width: {v1 * 2}{u} | Height: {v2}{u}"
-    elif s == "Cuboid":
-        txt = f"W: {v1}{u} | H: {v2}{u} | D: {app_state['depth']}{u}"
-    elif s == "Polygon":
-        txt = f"Side: {v1}{u} | Sides: {app_state['sides']}"
-    elif s in ["Circle", "Sphere"]:
-        txt = f"Radius: {v1}{u}"
-    elif s in ["Square", "Cube"]:
-        txt = f"Side: {v1}{u}"
-    else:
-        txt = f"Base: {v1}{u} | Height: {v2}{u}"
-    draw_t.write(txt, align="center", font=("Courier", 14, "bold"))
+    def draw_grid():
+        gt.clear()
+        for x in range(int(-W_WIDTH / 2), int(W_WIDTH / 2), 50):
+            gt.penup()
+            gt.goto(x, -W_HEIGHT / 2)
+            gt.pendown()
+            gt.goto(x, W_HEIGHT / 2)
+        for y in range(int(-W_HEIGHT / 2), int(W_HEIGHT / 2), 50):
+            gt.penup()
+            gt.goto(-W_WIDTH / 2, y)
+            gt.pendown()
+            gt.goto(W_WIDTH / 2, y)
 
 
-def save_results():
-    try:
-        sh, u = app_state["shape"], app_state["unit"]
-        filename = f"CAD_Export_{sh}.txt"
-        with open(filename, "w") as f:
-            f.write(f"DESIGNER PRO EXPORT\nShape: {sh}\nColor: {app_state['color']}\n")
-        screen.textinput("Success", f"Saved to {filename}")
-    except Exception as e:
-        screen.textinput("Error", str(e))
-
-
-def render_2d(s, v1, v2, u, cx, cy, VIS):
-    H = screen.window_height()
-    draw_t.color(app_state["color"])
-    draw_t.pensize(2)
-    area, perimeter, hypot = 0, 0, 0
-
-    draw_t.begin_fill()
-    if s == "Circle":
-        draw_t.goto(cx, cy - VIS / 2)
-        draw_t.pendown()
-        draw_t.circle(VIS / 2)
-        area, perimeter = math.pi * (v1 ** 2), 2 * math.pi * v1
-    elif s == "Triangle":
-        draw_t.goto(cx - VIS / 2, cy - VIS / 2)
-        draw_t.pendown()
-        draw_t.goto(cx + VIS / 2, cy - VIS / 2)
-        draw_t.goto(cx, cy + VIS / 2)
-        draw_t.goto(cx - VIS / 2, cy - VIS / 2)
-        area, hypot = 0.5 * v1 * v2, math.sqrt((v1 / 2) ** 2 + v2 ** 2)
-        perimeter = v1 + (2 * hypot)
-    elif s in ["Rectangle", "Square"]:
-        w_v, h_v = VIS, (VIS if s == "Square" else VIS * 0.6)
-        draw_t.goto(cx - w_v / 2, cy - h_v / 2)
-        draw_t.pendown()
-        for _ in range(2): draw_t.forward(w_v); draw_t.left(90); draw_t.forward(h_v); draw_t.left(90)
-        area, perimeter = v1 * (v1 if s == "Square" else v2), 2 * (v1 + (v1 if s == "Square" else v2))
-    elif s in ["Hexagon", "Polygon"]:
-        sd = 6 if s == "Hexagon" else app_state["sides"]
-        angle = 360 / sd
-        side_vis = (VIS * 0.7) * (2 * math.sin(math.pi / sd))
-        apothem = (side_vis / 2) / math.tan(math.pi / sd)
-        draw_t.penup()
-        draw_t.goto(cx - side_vis / 2, cy - apothem)
-        draw_t.pendown()
-        for _ in range(sd): draw_t.forward(side_vis); draw_t.left(angle)
-        area, perimeter = (sd * v1 ** 2) / (4 * math.tan(math.pi / sd)), sd * v1
-    elif s == "Parallelogram":
-        sl, hv = VIS * 0.4, VIS * 0.6
-        draw_t.goto(cx - VIS / 2, cy - hv / 2)
-        draw_t.pendown()
-        draw_t.forward(VIS)
-        draw_t.goto(cx + VIS / 2 + sl, cy + hv / 2)
-        draw_t.backward(VIS)
-        draw_t.goto(cx - VIS / 2, cy - hv / 2)
-        area, sl_r = v1 * v2, (sl / VIS) * v1
-        perimeter = 2 * (v1 + math.sqrt(v2 ** 2 + sl_r ** 2))
-    draw_t.end_fill()
-
-    draw_t.penup()
-    draw_t.color(THEME["text"])
-    draw_t.goto(cx, -H / 2 + 110)
-    draw_t.write(f"Area: {area:.2f} {u}²", align="center", font=("Courier", 16, "bold"))
-    draw_t.goto(cx, -H / 2 + 80)
-    draw_t.write(f"Perimeter: {perimeter:.2f} {u}", align="center", font=("Courier", 14, "bold"))
-    if s == "Triangle": draw_t.goto(cx, -H / 2 + 50); draw_t.write(f"Hypotenuse: {hypot:.2f} {u}", align="center",
-                                                                   font=("Courier", 12, "italic"))
-
-
-def render_3d(s, v1, v2, u, cx, cy, VIS):
-    H = screen.window_height()
-    FILL_COLOR, EDGE_COLOR = app_state["color"], "#008B8B"
-    draw_t.color(FILL_COLOR)
-    draw_t.pensize(2)
-    vol = 0
-    if s == "Cone":
-        apex = (cx, cy + VIS / 2)
-        base_y = cy - VIS / 2
-
-        # A. Fill the Side Walls (Triangle look)
-        draw_t.penup()
-        draw_t.goto(cx - VIS / 2, base_y)
-        draw_t.pendown()
-        draw_t.color(FILL_COLOR)
-        draw_t.begin_fill()
-        draw_t.goto(apex)
-        draw_t.goto(cx + VIS / 2, base_y)
-        draw_t.goto(cx - VIS / 2, base_y)
-        draw_t.end_fill()
-    elif s == "Cylinder":
-        # Define positions to fix "Unresolved reference"
-        base_y = cy - VIS / 2
-        top_y = cy + VIS / 2
-
-        def oval_cap(y_pos, f=False):
-            draw_t.penup()
-            draw_t.goto(cx + VIS / 2, y_pos)
-            draw_t.pendown()
-            if f: draw_t.begin_fill()
-            for i in range(361):
-                r = math.radians(i)
-                draw_t.goto(cx + (VIS / 2) * math.cos(r), y_pos + (VIS / 6) * math.sin(r))
-            if f: draw_t.end_fill()
-
-        # 1. Fill the Solid Body
-        draw_t.color(FILL_COLOR)
-        draw_t.penup()
-        draw_t.goto(cx - VIS / 2, base_y)
-        draw_t.pendown()
-        draw_t.begin_fill()
-        draw_t.goto(cx + VIS / 2, base_y)
-        draw_t.goto(cx + VIS / 2, top_y)
-        draw_t.goto(cx - VIS / 2, top_y)
-        draw_t.goto(cx - VIS / 2, base_y)
-        draw_t.end_fill()
-
-        # 2. Fill Caps (Shadow for bottom, Color for top)
-        draw_t.color(EDGE_COLOR)
-        oval_cap(base_y, f=True)
-        draw_t.color(FILL_COLOR)
-        oval_cap(top_y, f=True)
-
-        # 3. Draw Sharp Outlines
-        draw_t.color(EDGE_COLOR)
-        for dx in [-VIS / 2, VIS / 2]:
-            draw_t.penup()
-            draw_t.goto(cx + dx, base_y)
-            draw_t.pendown()
-            draw_t.goto(cx + dx, top_y)
-        oval_cap(base_y, f=False)
-        oval_cap(top_y, f=False)
-
-        vol = math.pi * (v1 ** 2) * v2
-
-    elif s in ["Cube", "Cuboid"]:
-        wv, hv, off = VIS, (VIS if s == "Cube" else VIS * 0.6), 60
-        fx, fy = cx - wv / 2, cy - hv / 2
-        bx, by = fx + off, fy + off
-        draw_t.color(FILL_COLOR)
-        for sx, sy in [(bx, by), (fx, fy)]:
-            draw_t.penup()
-            draw_t.goto(sx, sy)
-            draw_t.begin_fill()
-            for _ in range(2): draw_t.forward(wv); draw_t.left(90); draw_t.forward(hv); draw_t.left(90)
-            draw_t.end_fill()
-        draw_t.begin_fill()
-        draw_t.goto(fx, fy + hv)
-        draw_t.goto(bx, by + hv)
-        draw_t.goto(bx + wv, by + hv)
-        draw_t.goto(fx + wv, fy + hv)
-        draw_t.goto(fx + wv, fy)
-        draw_t.goto(bx + wv, by)
-        draw_t.goto(bx + wv, by + hv)
-        draw_t.goto(fx + wv, fy + hv)
-        draw_t.end_fill()
-        draw_t.color(EDGE_COLOR)
-        for sx, sy in [(fx, fy), (bx, by)]:
-            draw_t.penup()
-            draw_t.goto(sx, sy)
-            draw_t.pendown()
-            for _ in range(2): draw_t.forward(wv); draw_t.left(90); draw_t.forward(hv); draw_t.left(90)
-        for dx, dy in [(0, 0), (wv, 0), (wv, hv), (0, hv)]:
-            draw_t.penup()
-            draw_t.goto(fx + dx, fy + dy)
-            draw_t.pendown()
-            draw_t.goto(bx + dx, by + dy)
-        vol = v1 ** 3 if s == "Cube" else v1 * v2 * app_state["depth"]
-    elif s == "Pyramid":
-        # 1. Setup Coordinates
-        off, apex = 60, (cx, cy + VIS / 2)
-        # Corners: Front-Left, Front-Right, Back-Right, Back-Left
-        c = [(cx - VIS / 2, cy - VIS / 2),
-             (cx + VIS / 2, cy - VIS / 2),
-             (cx + VIS / 2 + off, cy - VIS / 2 + off),
-             (cx - VIS / 2 + off, cy - VIS / 2 + off)]
-
-        # 2. Draw and Fill the Base (Darker shade)
-        draw_t.penup()
-        draw_t.goto(c[0])  # FIXED: Move to first point in list
-        draw_t.pendown()
-        draw_t.color(EDGE_COLOR)
-        draw_t.begin_fill()
-        for p in c:
-            draw_t.goto(p)
-        draw_t.goto(c[0])  # Close the loop
-        draw_t.end_fill()
-
-        # 3. Draw and Fill the 4 Triangular Faces (Cyan)
-        draw_t.color(FILL_COLOR)
-        for i in range(4):
-            draw_t.penup()
-            draw_t.goto(c[i])  # Teleport to corner to prevent "Spikes"
-            draw_t.pendown()
-            draw_t.begin_fill()
-            draw_t.goto(apex)
-            draw_t.goto(c[(i + 1) % 4])
-            draw_t.goto(c[i])
-            draw_t.end_fill()
-
-        # 4. Draw Dark Outlines (Edges)
-        draw_t.color(EDGE_COLOR)
-        # Base Outline
-        draw_t.penup();
-        draw_t.goto(c[0]);
-        draw_t.pendown()
-        for p in c: draw_t.goto(p)
-        draw_t.goto(c[0])
-        # Apex Lines
-        for p in c:
-            draw_t.penup()
-            draw_t.goto(p)
-            draw_t.pendown()
-            draw_t.goto(apex)
-
-        vol = (1 / 3) * (v1 ** 2) * v2
-
-    elif s == "Sphere":
-        draw_t.penup()
-        draw_t.goto(cx, cy - VIS / 2)
-        draw_t.begin_fill()
-        draw_t.circle(VIS / 2)
-        draw_t.end_fill()
-        draw_t.color(EDGE_COLOR)
-        draw_t.circle(VIS / 2)
-        draw_t.penup()
-        draw_t.goto(cx + VIS / 2, cy)
-        draw_t.pendown()
-        for i in range(361):
-            r = math.radians(i)
-            draw_t.goto(cx + (VIS / 2) * math.cos(r), cy + (VIS / 6) * math.sin(r))
-        vol = (4 / 3) * math.pi * (v1 ** 3)
-    draw_t.penup()
-    draw_t.color(THEME["text"])
-    draw_t.goto(cx, -H / 2 + 50)
-    draw_t.write(f"Volume: {vol:.2f} {u}³", align="center", font=("Courier", 18, "bold"))
-
-
-def draw_ui_button(text, x, y, w, h, active):
-    ui_t.penup()
-    ui_t.goto(x, y)
-    ui_t.color(THEME["btn_active"] if active else THEME["btn_idle"])
-    ui_t.begin_fill()
-    for _ in range(2): ui_t.forward(w); ui_t.left(90); ui_t.forward(h); ui_t.left(90)
-    ui_t.end_fill()
-    ui_t.color(THEME["text"])
-    ui_t.goto(x + w / 2, y + h / 4)
-    ui_t.write(text, align="center", font=("Courier", 10, "bold"))
-
-
-def draw_sidebar():
-    W, H = screen.window_width(), screen.window_height()
-    ui_t.clear()
-
-    # Background Panel
-    ui_t.penup()
-    ui_t.goto(-W / 2, -H / 2)
-    ui_t.color(THEME["sidebar"])
-    ui_t.begin_fill()
-    for _ in range(2):
-        ui_t.forward(300)
-        ui_t.left(90)
-        ui_t.forward(H)
-        ui_t.left(90)
-    ui_t.end_fill()
-
-    # Title & Mode Buttons
-    ui_t.goto(-W / 2 + 150, H / 2 - 80)
-    ui_t.color(THEME["btn_active"])
-    ui_t.write("DESIGNER PRO", align="center", font=("Courier", 20, "bold"))
-
-    draw_ui_button("2D MODE", -W / 2 + 20, H / 2 - 150, 125, 40, app_state["category"] == "2D")
-    draw_ui_button("3D MODE", -W / 2 + 155, H / 2 - 150, 125, 40, app_state["category"] == "3D")
-
-    # Shape List
-    shs = ["Triangle", "Circle", "Rectangle", "Square", "Hexagon", "Parallelogram", "Polygon"] if app_state[
-                                                                                                      "category"] == "2D" \
-        else ["Cube", "Cuboid", "Cylinder", "Pyramid", "Sphere"]
-    y_off = H / 2 - 205
-    for s in shs:
-        draw_ui_button(s, -W / 2 + 20, y_off, 260, 32, app_state["shape"] == s)
-        y_off -= 38
-
-    # Bottom Menu
-    draw_ui_button("CHANGE COLOR", -W / 2 + 20, -H / 2 + 200, 260, 45, False)
-    draw_ui_button("EXPORT DATA", -W / 2 + 20, -H / 2 + 140, 260, 45, False)
-    draw_ui_button("EDIT DIMENSIONS", -W / 2 + 20, -H / 2 + 80, 260, 45, False)
-    draw_ui_button("EXIT", -W / 2 + 20, -H / 2 + 20, 260, 45, False)
-
-
-def refresh():
-    W, H = screen.window_width(), screen.window_height()
     draw_grid()
-    draw_sidebar()
-
-    draw_t.clear()
-    # Center the shape in the workspace
-    cx = (-W / 2 + 300 + W / 2) / 2
-    draw_specs(cx, 0, 300)
-
-    if app_state["category"] == "2D":
-        render_2d(app_state["shape"], app_state["val1"], app_state["val2"], app_state["unit"], cx, 0, 300)
-    else:
-        render_3d(app_state["shape"], app_state["val1"], app_state["val2"], app_state["unit"], cx, 0, 300)
-
-    # CRITICAL: This pushes all the drawing to the monitor
     screen.update()
+    screen.tracer(1)
+    t.speed(3)
 
-
-def handle_click(x, y):
-    W, H = screen.window_width(), screen.window_height()
-
-    # --- 1. MODE SELECTION (2D vs 3D) ---
-    # Detection for the 2D and 3D toggle buttons at the top
-    if -W / 2 + 20 < x < -W / 2 + 145 and H / 2 - 150 < y < H / 2 - 110:
-        app_state["category"], app_state["shape"], app_state["color"] = "2D", "Rectangle", "#2ECC71"
-    elif -W / 2 + 155 < x < -W / 2 + 280 and H / 2 - 150 < y < H / 2 - 110:
-        app_state["category"], app_state["shape"], app_state["color"] = "3D", "Cube", "#00FFFF"
-
-    # --- 2. SIDEBAR COLUMN DETECTION ---
-    elif -W / 2 + 20 < x < -W / 2 + 280:
-        shs = ["Triangle", "Circle", "Rectangle", "Square", "Hexagon", "Parallelogram", "Polygon"] if app_state[
-                                                                                                          "category"] == "2D" \
-            else ["Cube", "Cuboid", "Cylinder", "Pyramid", "Sphere"]
-
-        # Shape Selection Loop
-        y_check = H / 2 - 205
-        for s in shs:
-            if y_check < y < y_check + 32:
-                app_state["shape"] = s
-            y_check -= 38
-
-        # --- 3. BOTTOM MENU BUTTONS ---
-        # CHANGE COLOR Button
-        if -H / 2 + 200 < y < -H / 2 + 245:
-            new_col = screen.textinput("Color Picker", "Enter Name or Hex:")
-            if new_col:
-                try:
-                    ui_t.color(new_col)  # Test if valid
-                    app_state["color"] = new_col
-                except:
-                    pass
-
-        # EXPORT DATA Button
-        elif -H / 2 + 140 < y < -H / 2 + 185:
-            save_results()
-
-        # EDIT DIMENSIONS Button
-        elif -H / 2 + 80 < y < -H / 2 + 125:
-            sh = app_state["shape"]
-            u = app_state["unit"]
-
-            if sh == "Cuboid":
-                v1 = screen.numinput("W", f"Width ({u}):", default=app_state["val1"])
-                if v1 is not None: app_state["val1"] = v1
-                v2 = screen.numinput("H", f"Height ({u}):", default=app_state["val2"])
-                if v2 is not None: app_state["val2"] = v2
-                v3 = screen.numinput("D", f"Depth ({u}):", default=app_state["depth"])
-                if v3 is not None: app_state["depth"] = v3
-
-            elif sh in ["Circle", "Sphere", "Cylinder"]:
-                v = screen.numinput("R", f"Radius ({u}):", default=app_state["val1"])
-                if v is not None: app_state["val1"] = v
-                if sh == "Cylinder":
-                    h = screen.numinput("H", f"Height ({u}):", default=app_state["val2"])
-                    if h is not None: app_state["val2"] = h
-
-            elif sh == "Polygon":
-                v1 = screen.numinput("Side", f"Length ({u}):", default=app_state["val1"])
-                if v1 is not None: app_state["val1"] = v1
-                v2 = screen.numinput("Sides", "Count:", default=app_state["sides"])
-                if v2 is not None: app_state["sides"] = int(v2)
-
-            else:  # Triangle, Rectangle, Parallelogram, Pyramid
-                v1 = screen.numinput(sh, f"Base/Width ({u}):", default=app_state["val1"])
-                if v1 is not None: app_state["val1"] = v1
-                v2 = screen.numinput(sh, f"Height ({u}):", default=app_state["val2"])
-                if v2 is not None: app_state["val2"] = v2
-
-        # EXIT Button
-        elif -H / 2 + 20 < y < -H / 2 + 65:
-            screen.bye()
-            return
-
-    refresh()
-if __name__ == "__main__":
-        screen.listen()
-        screen.onclick(handle_click)
-        refresh()
+    while True:
         try:
-            turtle.mainloop()
-        except Exception as e:
-            print(f"Window closed: {e}")
+            screen.update()
+            # Ask for unit  at the start of each loop
+            unit = screen.textinput("Units", "Enter measurement unit (cm, m, in, ft):")
+            if unit is None: unit = "units"
+
+            cat_input = screen.textinput("Blueprint Category", "Choose: 2D or 3D (or 'Exit')")
+            if cat_input is None or cat_input.strip().lower() == 'exit': break
+
+            category = cat_input.strip().upper()
+            cx, cy = 0, 0
+            VIS_SIZE = W_WIDTH / 4
+            VIS_OFF = VIS_SIZE * 0.3
+            # Clear the previous shape and all its measurements
+            t.clear()
+            t.penup()
+            t.home()
+            t.setheading(0)
+            t.color(SHAPE_COLOR)
+            t.pensize(2)
+            if category == "3D":
+                shape_input = screen.textinput(
+                    "3D Visualizer",
+                    "Cube, Cylinder, Pyramid, Sphere, Cone, "
+                    "Triangular Prism, Rectangular Prism"
+                )
+
+                if shape_input is None:
+                    continue
+
+                shape = " ".join(shape_input.strip().lower().split())
+
+                if shape == "cube":
+                    real_s = screen.numinput("Cube", f"Side Length ({unit}):", default=10)
+                    if real_s:
+                        def draw_box(x, y, c):
+                            t.penup()
+                            t.goto(x, y)
+                            t.pendown()
+                            t.color(c)
+                            for _ in range(4): t.forward(VIS_SIZE); t.left(90)
+
+
+                        draw_box(cx - VIS_SIZE / 2 + VIS_OFF, cy - VIS_SIZE / 2 + VIS_OFF, "#4A6670")
+                        for x, y in [(cx - VIS_SIZE / 2, cy - VIS_SIZE / 2), (cx + VIS_SIZE / 2, cy - VIS_SIZE / 2),
+                                     (cx + VIS_SIZE / 2, cy + VIS_SIZE / 2), (cx - VIS_SIZE / 2, cy + VIS_SIZE / 2)]:
+                            t.penup()
+                            t.goto(x, y)
+                            t.pendown()
+                            t.goto(x + VIS_OFF, y + VIS_OFF)
+                        draw_box(cx - VIS_SIZE / 2, cy - VIS_SIZE / 2, SHAPE_COLOR)
+                        t.penup()
+                        t.goto(cx, cy - VIS_SIZE / 2 - 25)
+                        t.write(f"L: {real_s} {unit}", align="center", font=("Courier", 10, "bold"))
+                        t.goto(cx + VIS_SIZE / 2 + 10, cy)
+                        t.write(f"H: {real_s} {unit}", align="left", font=("Courier", 10, "bold"))
+                        t.goto(cx + VIS_SIZE / 2 + VIS_OFF / 2 + 10, cy - VIS_SIZE / 2 + VIS_OFF / 2)
+                        t.write(f"W: {real_s} {unit}", align="left", font=("Courier", 10, "bold"))
+                        t.goto(0, -VIS_SIZE / 2 - 65)
+                        t.write(f"Volume: {real_s ** 3:.2f} {unit}³", align="center", font=("Courier", 14, "bold"))
+
+                elif shape == "pyramid":
+                    real_s = screen.numinput("Pyramid", f"Base Side ({unit}):", default=10)
+                    real_h = screen.numinput("Pyramid", f"Height ({unit}):", default=10)
+                    if real_s and real_h:
+                        base_y = cy - VIS_SIZE / 2
+                        t.color("#4A6670")
+                        pts = [(cx - VIS_SIZE / 2, base_y), (cx + VIS_SIZE / 2, base_y),
+                               (cx + VIS_SIZE / 2 + VIS_OFF, base_y + VIS_OFF),
+                               (cx - VIS_SIZE / 2 + VIS_OFF, base_y + VIS_OFF)]
+                        t.penup()
+                        t.goto(pts[0])
+                        t.pendown()
+                        for p in pts[1:]: t.goto(p)
+                        t.goto(pts[0])
+                        t.color(SHAPE_COLOR)
+                        apex = (cx + VIS_OFF / 2, base_y + VIS_SIZE)
+                        for p in pts: t.penup(); t.goto(p); t.pendown(); t.goto(apex)
+                        t.penup()
+                        t.goto(cx + VIS_SIZE / 2 + VIS_OFF + 20, cy)
+                        t.write(f"H: {real_h} {unit}", align="left", font=("Courier", 10, "bold"))
+                        t.goto(cx, base_y - 25)
+                        t.write(f"B: {real_s} {unit}", align="center", font=("Courier", 10, "bold"))
+                        t.goto(0, base_y - 65)
+                        t.write(f"Volume: {(1 / 3) * (real_s ** 2) * real_h:.2f} {unit}³", align="center",
+                                font=("Courier", 14, "bold"))
+
+                elif shape == "cylinder":
+                    real_r = screen.numinput("Cylinder", f"Radius ({unit}):", default=5)
+                    real_h = screen.numinput("Cylinder", f"Height ({unit}):", default=10)
+                    if real_r and real_h:
+                        tilt = 0.4
+
+
+                        def draw_oval(x, y, color):
+                            t.penup()
+                            t.goto(x + VIS_SIZE / 2, y)
+                            t.pendown()
+                            t.color(color)
+                            for i in range(361):
+                                rad = math.radians(i)
+                                t.goto(x + (VIS_SIZE / 2) * math.cos(rad), y + (VIS_SIZE / 2 * tilt) * math.sin(rad))
+
+
+                        draw_oval(cx, cy - VIS_SIZE / 2, "#4A6670")
+                        draw_oval(cx, cy + VIS_SIZE / 2, SHAPE_COLOR)
+                        for sx in [-VIS_SIZE / 2, VIS_SIZE / 2]:
+                            t.penup()
+                            t.goto(cx + sx, cy - VIS_SIZE / 2)
+                            t.pendown()
+                            t.goto(cx + sx, cy + VIS_SIZE / 2)
+                        t.penup()
+                        t.goto(cx + VIS_SIZE / 2 + 10, cy)
+                        t.write(f"H: {real_h} {unit}", align="left", font=("Courier", 10, "bold"))
+                        t.goto(cx, cy + VIS_SIZE / 2 + (VIS_SIZE / 2 * tilt) + 5)
+                        t.write(f"R: {real_r} {unit}", align="center", font=("Courier", 10, "bold"))
+                        t.goto(0, -VIS_SIZE / 2 - 65)
+                        t.write(f"Volume: {math.pi * (real_r ** 2) * real_h:.2f} {unit}³", align="center",
+                                font=("Courier", 14, "bold"))
+
+                elif shape == "sphere":
+                    real_r = screen.numinput(
+                        "Sphere",
+                        f"Radius ({unit}):",
+                        default=5,
+                        minval=0.001
+                    )
+
+                    if real_r is not None and real_r > 0:
+                        # Blueprint sphere dimensions
+                        draw_r = min(W_WIDTH / 5, W_HEIGHT / 4)
+
+                        # Draw the outer circle
+                        t.color(SHAPE_COLOR)
+                        t.pensize(2)
+                        t.penup()
+                        t.goto(cx, cy - draw_r)
+                        t.pendown()
+                        t.circle(draw_r)
+                        t.penup()
+
+                        # Draw horizontal elliptical latitude lines
+                        for fraction in [-0.75, -0.4, 0, 0.4, 0.75]:
+                            y = cy + fraction * draw_r
+                            oval_r = draw_r * math.sqrt(
+                                1 - fraction**2
+                            )
+
+                            t.penup()
+                            t.goto(cx - oval_r, y)
+                            t.pendown()
+
+                            for i in range(61):
+                                angle = math.radians(i * 6)
+                                t.goto(
+                                    cx + oval_r * math.cos(angle),
+                                    y + oval_r * 0.18 * math.sin(angle)
+                                )
+
+                            t.penup()
+
+                        # Draw vertical meridian ellipses
+                        for factor in [0.4, 0.75]:
+                            for sign in [-1, 1]:
+                                t.penup()
+                                t.goto(cx, cy - draw_r)
+                                t.pendown()
+
+                                for i in range(61):
+                                    angle = math.radians(i * 6)
+                                    t.goto(
+                                        cx + sign * draw_r * factor
+                                        * math.sin(angle),
+                                        cy + draw_r * math.cos(angle)
+                                    )
+
+                                t.penup()
+
+                        # Radius indicator
+                        t.color("#4A6670")
+                        t.goto(cx, cy)
+                        t.pendown()
+                        t.goto(cx + draw_r, cy)
+                        t.penup()
+
+                        t.color(SHAPE_COLOR)
+
+                        # Measurements
+                        surface_area = 4 * math.pi * real_r**2
+                        volume = (4 / 3) * math.pi * real_r**3
+
+                        t.goto(cx, cy - draw_r - 30)
+                        t.write(
+                            f"Radius: {real_r} {unit}",
+                            align="center",
+                            font=("Courier", 10, "bold")
+                        )
+
+                        t.goto(cx, cy - draw_r - 55)
+                        t.write(
+                            f"Surface Area: {surface_area:.2f} {unit}²",
+                            align="center",
+                            font=("Courier", 11, "bold")
+                        )
+
+                        t.goto(cx, cy - draw_r - 85)
+                        t.write(
+                            f"Volume: {volume:.2f} {unit}³",
+                            align="center",
+                            font=("Courier", 14, "bold")
+                        )
+                elif shape == "cone":
+                    real_r = screen.numinput(
+                        "Cone",
+                        f"Base radius ({unit}):",
+                        default=5,
+                        minval=0.001
+                    )
+
+                    if real_r is not None and real_r > 0:
+                        real_h = screen.numinput(
+                            "Cone",
+                            f"Height ({unit}):",
+                            default=10,
+                            minval=0.001
+                        )
+
+                        if real_h is not None and real_h > 0:
+                            # Blueprint drawing dimensions
+                            draw_r = min(W_WIDTH / 6, W_HEIGHT / 5)
+                            draw_h = draw_r * 1.8
+
+                            # Draw elliptical base
+                            t.color(SHAPE_COLOR)
+                            t.pensize(2)
+                            t.penup()
+                            t.goto(cx - draw_r, cy - draw_h / 2)
+                            t.pendown()
+
+                            for i in range(61):
+                                angle = math.radians(i * 6)
+                                t.goto(
+                                    cx + draw_r * math.cos(angle),
+                                    cy - draw_h / 2
+                                    + draw_r * 0.3 * math.sin(angle)
+                                )
+
+                            t.penup()
+
+                            # Draw cone apex
+                            apex_x = cx
+                            apex_y = cy + draw_h / 2
+
+                            # Draw sides
+                            t.goto(apex_x, apex_y)
+                            t.pendown()
+                            t.goto(cx - draw_r, cy - draw_h / 2)
+                            t.penup()
+
+                            t.goto(apex_x, apex_y)
+                            t.pendown()
+                            t.goto(cx + draw_r, cy - draw_h / 2)
+                            t.penup()
+
+                            # Dashed rear edge of base
+                            t.color("#4A6670")
+                            t.goto(cx - draw_r, cy - draw_h / 2)
+                            t.setheading(0)
+
+                            for i in range(30):
+                                t.pendown() if i % 2 == 0 else t.penup()
+                                t.forward((2 * draw_r) / 30)
+
+                            t.penup()
+                            t.color(SHAPE_COLOR)
+
+                            # Measurements
+                            surface_area = (
+                                math.pi * real_r
+                                * (real_r + math.sqrt(real_r**2 + real_h**2))
+                            )
+                            volume = (
+                                math.pi * real_r**2 * real_h / 3
+                            )
+
+                            t.goto(cx, cy - draw_h / 2 - 35)
+                            t.write(
+                                f"Radius: {real_r} {unit} | Height: {real_h} {unit}",
+                                align="center",
+                                font=("Courier", 10, "bold")
+                            )
+
+                            t.goto(cx, cy - draw_h / 2 - 60)
+                            t.write(
+                                f"Surface Area: {surface_area:.2f} {unit}²",
+                                align="center",
+                                font=("Courier", 11, "bold")
+                            )
+
+                            t.goto(cx, cy - draw_h / 2 - 90)
+                            t.write(
+                                f"Volume: {volume:.2f} {unit}³",
+                                align="center",
+                                font=("Courier", 14, "bold")
+                            )
+                elif shape == "triangular prism":
+                    base = screen.numinput(
+                        "Triangular Prism",
+                        f"Triangle base ({unit}):",
+                        default=6,
+                        minval=0.001
+                    )
+
+                    if base is not None and base > 0:
+                        tri_h = screen.numinput(
+                            "Triangular Prism",
+                            f"Triangle height ({unit}):",
+                            default=4,
+                            minval=0.001
+                        )
+
+                        if tri_h is not None and tri_h > 0:
+                            length = screen.numinput(
+                                "Triangular Prism",
+                                f"Prism length ({unit}):",
+                                default=8,
+                                minval=0.001
+                            )
+
+                            if length is not None and length > 0:
+                                # Blueprint drawing dimensions
+                                scale = min(
+                                    W_WIDTH / 12,
+                                    W_HEIGHT / 10
+                                )
+                                draw_b = base * scale
+                                draw_h = tri_h * scale
+                                draw_l = length * scale * 0.6
+
+                                # Keep the drawing within the screen
+                                max_draw = min(
+                                    W_WIDTH * 0.35,
+                                    W_HEIGHT * 0.3
+                                )
+                                factor = min(
+                                    1,
+                                    max_draw / max(
+                                        draw_b, draw_h, draw_l
+                                    )
+                                )
+
+                                draw_b *= factor
+                                draw_h *= factor
+                                draw_l *= factor
+
+                                # Front triangle
+                                left = (cx - draw_b / 2, cy - draw_h / 2)
+                                right = (cx + draw_b / 2, cy - draw_h / 2)
+                                top = (cx, cy + draw_h / 2)
+
+                                # Back triangle, offset for perspective
+                                offset_x = draw_l * 0.6
+                                offset_y = draw_l * 0.4
+
+                                back_left = (
+                                    left[0] + offset_x,
+                                    left[1] + offset_y
+                                )
+                                back_right = (
+                                    right[0] + offset_x,
+                                    right[1] + offset_y
+                                )
+                                back_top = (
+                                    top[0] + offset_x,
+                                    top[1] + offset_y
+                                )
+
+                                t.color(SHAPE_COLOR)
+                                t.pensize(2)
+
+                                # Draw front triangle
+                                t.penup()
+                                t.goto(left)
+                                t.pendown()
+                                t.goto(right)
+                                t.goto(top)
+                                t.goto(left)
+                                t.penup()
+
+                                # Draw back triangle
+                                t.goto(back_left)
+                                t.pendown()
+                                t.goto(back_right)
+                                t.goto(back_top)
+                                t.goto(back_left)
+                                t.penup()
+
+                                # Connect corresponding vertices
+                                for front, back in [
+                                    (left, back_left),
+                                    (right, back_right),
+                                    (top, back_top)
+                                ]:
+                                    t.goto(front)
+                                    t.pendown()
+                                    t.goto(back)
+                                    t.penup()
+
+                                # Measurements
+                                triangle_area = base * tri_h / 2
+                                volume = triangle_area * length
+
+                                # Surface area needs the third triangle side.
+                                # Assume an isosceles triangle for this formula.
+                                slant = math.sqrt(
+                                    (base / 2) ** 2 + tri_h ** 2
+                                )
+                                surface_area = (
+                                    base * length
+                                    + 2 * slant * length
+                                    + base * tri_h
+                                )
+
+                                t.color(SHAPE_COLOR)
+                                t.goto(cx, cy - draw_h / 2 - draw_l * 0.4 - 35)
+                                t.write(
+                                    f"Base: {base} {unit} | "
+                                    f"Triangle height: {tri_h} {unit}",
+                                    align="center",
+                                    font=("Courier", 10, "bold")
+                                )
+
+                                t.goto(cx, cy - draw_h / 2 - draw_l * 0.4 - 60)
+                                t.write(
+                                    f"Length: {length} {unit} | "
+                                    f"Surface Area: {surface_area:.2f} {unit}²",
+                                    align="center",
+                                    font=("Courier", 10, "bold")
+                                )
+
+                                t.goto(cx, cy - draw_h / 2 - draw_l * 0.4 - 85)
+                                t.write(
+                                    f"Volume: {volume:.2f} {unit}³",
+                                    align="center",
+                                    font=("Courier", 13, "bold")
+                                )
+                elif shape == "rectangular prism":
+                    real_l = screen.numinput(
+                        "Rectangular Prism",
+                        f"Length ({unit}):",
+                        default=8,
+                        minval=0.001
+                    )
+
+                    if real_l is not None and real_l > 0:
+                        real_w = screen.numinput(
+                            "Rectangular Prism",
+                            f"Width ({unit}):",
+                            default=5,
+                            minval=0.001
+                        )
+
+                        if real_w is not None and real_w > 0:
+                            real_h = screen.numinput(
+                                "Rectangular Prism",
+                                f"Height ({unit}):",
+                                default=4,
+                                minval=0.001
+                            )
+
+                            if real_h is not None and real_h > 0:
+                                # Blueprint drawing dimensions
+                                scale = min(
+                                    W_WIDTH / 12,
+                                    W_HEIGHT / 10
+                                )
+
+                                draw_l = real_l * scale
+                                draw_w = real_w * scale * 0.6
+                                draw_h = real_h * scale
+
+                                # Scale down if the prism is too large
+                                max_draw = min(
+                                    W_WIDTH * 0.35,
+                                    W_HEIGHT * 0.3
+                                )
+                                factor = min(
+                                    1,
+                                    max_draw / max(
+                                        draw_l, draw_w, draw_h
+                                    )
+                                )
+
+                                draw_l *= factor
+                                draw_w *= factor
+                                draw_h *= factor
+
+                                # Front rectangle
+                                left = (cx - draw_l / 2, cy - draw_h / 2)
+                                right = (cx + draw_l / 2, cy - draw_h / 2)
+                                top_right = (
+                                    cx + draw_l / 2,
+                                    cy + draw_h / 2
+                                )
+                                top_left = (
+                                    cx - draw_l / 2,
+                                    cy + draw_h / 2
+                                )
+
+                                # Back rectangle offset for perspective
+                                ox = draw_w * 0.7
+                                oy = draw_w * 0.5
+
+                                back_left = (left[0] + ox, left[1] + oy)
+                                back_right = (right[0] + ox, right[1] + oy)
+                                back_top_right = (
+                                    top_right[0] + ox,
+                                    top_right[1] + oy
+                                )
+                                back_top_left = (
+                                    top_left[0] + ox,
+                                    top_left[1] + oy
+                                )
+
+                                t.color(SHAPE_COLOR)
+                                t.pensize(2)
+
+                                # Draw front face
+                                t.penup()
+                                t.goto(left)
+                                t.pendown()
+                                t.goto(right)
+                                t.goto(top_right)
+                                t.goto(top_left)
+                                t.goto(left)
+                                t.penup()
+
+                                # Draw back face
+                                t.goto(back_left)
+                                t.pendown()
+                                t.goto(back_right)
+                                t.goto(back_top_right)
+                                t.goto(back_top_left)
+                                t.goto(back_left)
+                                t.penup()
+
+                                # Connect front and back corners
+                                for front, back in [
+                                    (left, back_left),
+                                    (right, back_right),
+                                    (top_right, back_top_right),
+                                    (top_left, back_top_left)
+                                ]:
+                                    t.goto(front)
+                                    t.pendown()
+                                    t.goto(back)
+                                    t.penup()
+
+                                # Calculations
+                                surface_area = 2 * (
+                                    real_l * real_w
+                                    + real_l * real_h
+                                    + real_w * real_h
+                                )
+                                volume = real_l * real_w * real_h
+
+                                # Display measurements
+                                label_y = (
+                                    cy - draw_h / 2 - draw_w * 0.5 - 35
+                                )
+
+                                t.color(SHAPE_COLOR)
+                                t.goto(cx, label_y)
+                                t.write(
+                                    f"L: {real_l} {unit} | "
+                                    f"W: {real_w} {unit} | "
+                                    f"H: {real_h} {unit}",
+                                    align="center",
+                                    font=("Courier", 10, "bold")
+                                )
+
+                                t.goto(cx, label_y - 25)
+                                t.write(
+                                    f"Surface Area: {surface_area:.2f} {unit}²",
+                                    align="center",
+                                    font=("Courier", 11, "bold")
+                                )
+
+                                t.goto(cx, label_y - 55)
+                                t.write(
+                                    f"Volume: {volume:.2f} {unit}³",
+                                    align="center",
+                                    font=("Courier", 14, "bold")
+                                )
+
+            elif category == "2D":
+                shape_input = screen.textinput("2D Designer",
+                                               "Triangle, Circle, Rectangle, Square, Hexagon, Parallelogram , Custom Polygon",)
+                if not shape_input: continue
+                shape = shape_input.strip().capitalize()
+                t.clear()
+                t.color(SHAPE_COLOR)
+
+                if shape == "Triangle":
+                    b_v = screen.numinput("Triangle", f"Base ({unit}):", default=10)
+                    h_v = screen.numinput("Triangle", f"Height ({unit}):", default=10)
+                    if b_v and h_v:
+                        sc = (W_WIDTH / 4) / max(b_v, h_v)
+                        b, h = b_v * sc, h_v * sc
+                        hyp = math.sqrt(b_v ** 2 + h_v ** 2)
+                        ang_b = math.degrees(math.atan2(h_v, b_v))
+                        ang_t = 90 - ang_b
+                        t.penup()
+                        t.goto(cx - b / 2, cy - h / 2)
+                        t.pendown()
+                        t.goto(cx + b / 2, cy - h / 2)
+                        t.write(" 90°", font=("Courier", 10, "bold"))
+                        t.goto(cx + b / 2, cy + h / 2)
+                        t.write(f" {ang_t:.1f}°", font=("Courier", 10, "bold"))
+                        t.goto(cx - b / 2, cy - h / 2)
+                        t.write(f" {ang_b:.1f}°", font=("Courier", 10, "bold"))
+                        t.penup()
+                        t.goto(cx, cy - h / 2 - 30)
+                        t.write(f"B: {b_v} {unit}", align="center", font=("Courier", 10, "bold"))
+                        t.goto(cx + b / 2 + 10, cy)
+                        t.write(f"H: {h_v} {unit}", align="left", font=("Courier", 10, "bold"))
+                        t.goto(cx, cy + h / 2 + 15)
+                        t.write(f"Hyp: {hyp:.2f} {unit}", align="center", font=("Courier", 10, "bold"))
+                        t.goto(0, -h / 2 - 60)
+                        t.write(f"Area: {0.5 * b_v * h_v:.2f} {unit}²", align="center", font=("Courier", 14, "bold"))
+
+                elif shape in ["Rectangle", "Square"]:
+                    l_v = screen.numinput(shape, f"Length ({unit}):", default=10)
+                    w_v = l_v if shape == "Square" else screen.numinput(shape, f"Width ({unit}):", default=5)
+                    if l_v and w_v:
+                        sc = (W_WIDTH / 4) / max(l_v, w_v)
+                        l, w = l_v * sc, w_v * sc
+                        t.penup()
+                        t.goto(cx - l / 2, cy - w / 2)
+                        t.pendown()
+                        for _ in range(2):
+                            t.forward(l)
+                            t.write(" 90°", font=("Courier", 10, "bold"))
+                            t.left(90)
+                            t.forward(w)
+                            t.write(" 90°", font=("Courier", 10, "bold"))
+                            t.left(90)
+                        t.penup()
+                        t.goto(cx, cy - w / 2 - 30)
+                        t.write(f"L: {l_v} {unit}", align="center", font=("Courier", 10, "bold"))
+                        t.goto(cx + l / 2 + 10, cy)
+                        t.write(f"W: {w_v} {unit}", align="left", font=("Courier", 10, "bold"))
+                        t.goto(0, -w / 2 - 60)
+                        t.write(f"Area: {l_v * w_v:.2f} {unit}²", align="center", font=("Courier", 14, "bold"))
+
+
+
+
+                elif shape == "Hexagon":
+                    s_v = screen.numinput("Hexagon", f"Side ({unit}):", default=10)
+                    if s_v:
+                        sc = (W_HEIGHT / 6) / s_v
+                        s = s_v * sc
+                        t.penup()
+                        t.goto(-s / 2, -s)
+                        t.pendown()
+                        for _ in range(6): t.forward(s); t.write(" 120°", font=("Courier", 10, "bold")); t.left(60)
+                        t.penup()
+                        t.goto(0, -s - 30)
+                        t.write(f"S: {s_v} {unit}", align="center", font=("Courier", 10, "bold"))
+                        t.goto(0, -s - 60)
+                        t.write(f"Area: {(3 * math.sqrt(3) / 2) * (s_v ** 2):.2f} {unit}²", align="center",
+                                font=("Courier", 14, "bold"))
+
+                elif shape == "Parallelogram":
+                    b_v = screen.numinput("Para", f"Base ({unit}):")
+                    h_v = screen.numinput("Para", f"Height ({unit}):")
+                    s_v = screen.numinput("Para", f"Slant ({unit}):")
+                    if b_v and h_v and s_v:
+                        sc = (W_WIDTH / 4) / max(b_v, h_v, s_v)
+                        b, h, slant = b_v * sc, h_v * sc, s_v * sc
+                        ang = math.degrees(math.asin(min(1, h_v / s_v)))
+                        t.penup()
+                        t.goto(-b / 2, -h / 2)
+                        t.pendown()
+                        for _ in range(2):
+                            t.forward(b)
+                            t.write(f" {ang:.1f}°", font=("Courier", 10, "bold"))
+                            t.left(ang)
+                            t.forward(slant)
+                            t.write(f" {180 - ang:.1f}°", font=("Courier", 10, "bold"))
+                            t.left(180 - ang)
+                        t.penup()
+                        t.goto(cx, cy - h / 2 - 30)
+                        t.write(f"B: {b_v} {unit}", align="center", font=("Courier", 10, "bold"))
+                        t.goto(cx + b / 2 + 10, cy)
+                        t.write(f"H: {h_v} {unit} (S: {s_v} {unit})", align="left", font=("Courier", 10, "bold"))
+                        t.goto(0, -h / 2 - 60)
+                        t.write(f"Area: {b_v * h_v:.2f} {unit}²", align="center", font=("Courier", 14, "bold"))
+
+                elif shape == "Circle":
+                    r_v = screen.numinput("Circle", f"Radius ({unit}):", default=5)
+                    if r_v:
+                        sc = (W_HEIGHT / 4) / r_v
+                        r = r_v * sc
+                        t.penup()
+                        t.goto(0, -r)
+                        t.pendown()
+                        t.circle(r)
+                        t.penup()
+                        t.goto(0, 10)
+                        t.write(f"R: {r_v} {unit}", align="center", font=("Courier", 10, "bold"))
+                        t.goto(0, -20)
+                        t.write("360°", align="center", font=("Courier", 10, "bold"))
+                        t.goto(0, -50)
+                        t.write(f"Area: {math.pi * r_v ** 2:.2f} {unit}²", align="center", font=("Courier", 14, "bold"))
+
+
+                elif shape not in [
+                    "Triangle", "Circle", "Rectangle", "Square",
+                    "Hexagon", "Parallelogram"
+                ]:
+                    polygon_name = shape_input.strip()
+
+                    n_v = screen.numinput(
+                        "Custom Polygon",
+                        f"How many sides does '{polygon_name}' have? (3-100):",
+                        default=5,
+                        minval=3,
+                        maxval=100
+                    )
+
+                    if n_v is not None:
+                        n = int(n_v)
+
+                        s_v = screen.numinput(
+                            polygon_name,
+                            f"Side length ({unit}):",
+                            default=10,
+                            minval=0.001
+                        )
+
+                        if s_v is not None and s_v > 0:
+                            max_radius = min(W_WIDTH / 4, W_HEIGHT / 3)
+
+                            points = []
+                            for i in range(n):
+                                angle = math.radians(-90 + i * 360 / n)
+                                px = cx + max_radius * math.cos(angle)
+                                py = cy + max_radius * math.sin(angle)
+                                points.append((px, py))
+
+                            t.color(SHAPE_COLOR)
+                            t.pensize(2)
+                            t.penup()
+                            t.goto(points[0])
+                            t.pendown()
+
+                            for point in points[1:]:
+                                t.goto(point)
+
+                            t.goto(points[0])
+                            t.penup()
+
+                            perimeter = n * s_v
+                            area = n * s_v**2 / (
+                                4 * math.tan(math.pi / n)
+                            )
+                            interior_angle = (n - 2) * 180 / n
+
+                            t.goto(cx, -max_radius - 30)
+                            t.write(
+                                f"{polygon_name}: {n} sides",
+                                align="center",
+                                font=("Courier", 12, "bold")
+                            )
+
+                            t.goto(cx, -max_radius - 55)
+                            t.write(
+                                f"Side: {s_v} {unit} | Angle: {interior_angle:.2f}°",
+                                align="center",
+                                font=("Courier", 10, "bold")
+                            )
+
+                            t.goto(cx, -max_radius - 80)
+                            t.write(
+                                f"Perimeter: {perimeter:.2f} {unit}",
+                                align="center",
+                                font=("Courier", 12, "bold")
+                            )
+
+                            t.goto(cx, -max_radius - 110)
+                            t.write(
+                                f"Area: {area:.2f} {unit}²",
+                                align="center",
+                                font=("Courier", 14, "bold")
+                            )
+
+
+            time.sleep(0.1)
+        except (turtle.Terminator, tk.TclError):
+            break
+
+    try:
+        screen.bye()
+    except:
+        pass
